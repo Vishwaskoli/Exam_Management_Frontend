@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 
-const API_BASE_URL = "https://localhost:7248/api/SubjectMaster"; // change port if needed
+const API_BASE_URL = "https://localhost:7248/api/SubjectMaster";
 
 const Subject_Master = () => {
   const [subjects, setSubjects] = useState([]);
@@ -10,7 +10,7 @@ const Subject_Master = () => {
   const [subjectName, setSubjectName] = useState("");
   const [userId, setUserId] = useState("");
   const [activeAction, setActiveAction] = useState(null);
-
+  const [searchTerm, setSearchTerm] = useState("");
 
   // =============================
   // FETCH SUBJECTS
@@ -27,6 +27,13 @@ const Subject_Master = () => {
   useEffect(() => {
     fetchSubjects();
   }, []);
+
+  // =============================
+  // FILTERED SUBJECTS (SEARCH)
+  // =============================
+  const filteredSubjects = subjects.filter((sub) =>
+    sub.subject_Name?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   // =============================
   // OPEN ADD MODAL
@@ -59,13 +66,11 @@ const Subject_Master = () => {
 
     try {
       if (editingSubject === null) {
-        // CREATE
         await axios.post(`${API_BASE_URL}/Create`, {
           Subject_Name: subjectName,
           Created_By: parseInt(userId),
         });
       } else {
-        // UPDATE
         await axios.post(`${API_BASE_URL}/Update`, {
           Subject_Id: editingSubject.subject_Id,
           Subject_Name: subjectName,
@@ -84,7 +89,8 @@ const Subject_Master = () => {
   // DELETE
   // =============================
   const handleDelete = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this subject?")) return;
+    if (!window.confirm("Are you sure you want to delete this subject?"))
+      return;
 
     try {
       await axios.post(`${API_BASE_URL}/Delete/${id}`);
@@ -96,13 +102,24 @@ const Subject_Master = () => {
 
   return (
     <div className="container mt-4">
-
       {/* HEADER */}
       <div className="d-flex justify-content-between align-items-center mb-3">
         <h3>Subject Master</h3>
-        <button className="btn btn-primary" onClick={handleAdd}>
-          + Add Subject
-        </button>
+
+        <div className="d-flex gap-2">
+          <input
+            type="text"
+            className="form-control"
+            placeholder="Search subject..."
+            style={{ width: "250px" }}
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+
+          <button className="btn btn-primary" onClick={handleAdd}>
+            + Add Subject
+          </button>
+        </div>
       </div>
 
       {/* TABLE */}
@@ -111,46 +128,29 @@ const Subject_Master = () => {
           <table className="table table-hover">
             <thead className="table-light">
               <tr>
-                <th>ID</th>
+                <th>Serial Number</th>
                 <th>Subject Name</th>
-                <th>Created Date</th>
-                <th>Created By</th>
-                <th>Modified Date</th>
-                <th>Modified By</th>
                 <th style={{ width: "80px" }}>Action</th>
               </tr>
             </thead>
+
             <tbody>
-              {subjects.length > 0 ? (
-                subjects.map((sub) => (
+              {filteredSubjects.length > 0 ? (
+                filteredSubjects.map((sub, index) => (
                   <tr key={sub.subject_Id}>
-                    <td>{sub.subject_Id}</td>
+                    <td>{index + 1}</td>
                     <td>{sub.subject_Name}</td>
-
-                    <td>
-                      {sub.created_Date
-                        ? new Date(sub.created_Date).toLocaleString()
-                        : "-"}
-                    </td>
-
-                    <td>{sub.created_By}</td>
-
-                    <td>
-                      {sub.modified_Date
-                        ? new Date(sub.modified_Date).toLocaleString()
-                        : "-"}
-                    </td>
-
-                    <td>{sub.modified_By ?? "-"}</td>
-
-
 
                     {/* ACTION COLUMN */}
                     <td style={{ position: "relative" }}>
                       <button
                         className="btn btn-primary btn-sm"
                         onClick={() =>
-                          setActiveAction(activeAction === sub.subject_Id ? null : sub.subject_Id)
+                          setActiveAction(
+                            activeAction === sub.subject_Id
+                              ? null
+                              : sub.subject_Id
+                          )
                         }
                       >
                         ⋮
@@ -189,12 +189,11 @@ const Subject_Master = () => {
                         </div>
                       )}
                     </td>
-
                   </tr>
                 ))
               ) : (
                 <tr>
-                  <td colSpan="4" className="text-center">
+                  <td colSpan="3" className="text-center">
                     No Records Found
                   </td>
                 </tr>
@@ -209,7 +208,6 @@ const Subject_Master = () => {
         <div className="modal fade show d-block" tabIndex="-1">
           <div className="modal-dialog">
             <div className="modal-content">
-
               <div className="modal-header">
                 <h5 className="modal-title">
                   {editingSubject ? "Edit Subject" : "Add Subject"}
@@ -221,27 +219,33 @@ const Subject_Master = () => {
               </div>
 
               <div className="modal-body">
-                <div className="mb-3">
-                  <label className="form-label">Subject Name</label>
+                <div className="form-floating mb-3">
                   <input
                     type="text"
                     className="form-control"
+                    id="subjectName"
+                    placeholder="Subject Name"
                     value={subjectName}
                     onChange={(e) => setSubjectName(e.target.value)}
                   />
+                  <label htmlFor="subjectName">Subject Name</label>
                 </div>
 
-                <div className="mb-3">
-                  <label className="form-label">
-                    {editingSubject ? "Modified By (User ID)" : "Created By (User ID)"}
-                  </label>
+
+                <div className="form-floating mb-3">
                   <input
                     type="number"
                     className="form-control"
+                    id="userId"
+                    placeholder="User ID"
                     value={userId}
                     onChange={(e) => setUserId(e.target.value)}
                   />
+                  <label htmlFor="userId">
+                    {editingSubject ? "Modified By (User ID)" : "Created By (User ID)"}
+                  </label>
                 </div>
+
               </div>
 
               <div className="modal-footer">
@@ -255,12 +259,12 @@ const Subject_Master = () => {
                   {editingSubject ? "Update" : "Save"}
                 </button>
               </div>
-
             </div>
           </div>
         </div>
-      )}
-    </div>
+      )
+      }
+    </div >
   );
 };
 
