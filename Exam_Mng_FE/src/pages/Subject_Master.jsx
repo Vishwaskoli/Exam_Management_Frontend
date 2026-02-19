@@ -101,7 +101,7 @@ const Subject_Master = () => {
   };
 
   return (
-    <div className="container mt-4">
+    <div className="container mt-2">
       {/* HEADER */}
       <div className="d-flex justify-content-between align-items-center mb-3">
         <h3>Subject Master</h3>
