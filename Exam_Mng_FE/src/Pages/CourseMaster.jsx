@@ -13,6 +13,10 @@ const CourseMaster = () => {
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [newCourseName, setNewCourseName] = useState("");
     const [createLoading, setCreateLoading] = useState(false);
+    const [createPage, setCreatePage] = useState(true);
+    const [pageMode, setPageMode] = useState("list");
+    // "list" | "create" | "edit"
+
 
     // Fetch Courses
     const fetchCourses = async () => {
@@ -97,8 +101,9 @@ const CourseMaster = () => {
     const handleEdit = (course) => {
         setSelectedCourse(course);
         setEditName(course.course_Name);
-        setShowEditModal(true);
+        setPageMode("edit");
     };
+
 
     const handleUpdate = async () => {
         if (!editName.trim()) {
@@ -139,150 +144,174 @@ const CourseMaster = () => {
     if (error) return <div className="alert alert-danger">{error}</div>;
 
     return (
-        <div className="container mt-4">
-            <div className="d-flex justify-content-between align-items-center mb-3">
-                <h3>Course Master</h3>
+        pageMode === "create" ?
+            (<div style={{ paddingTop: "100px" }} className="container mt-4">
+                <div className="d-flex mb-3">
+                    <h3>Course Master</h3>
+                </div>
+                <div className="card shadow-sm">
+                    <div className="card-body">
+                        <div className="d-flex flex-column justify-content-center align-items-center">
+                            <div className="w-50 mt-5">
+                                <div class="relative">
+                                    <input type="text" onChange={e => setNewCourseName(e.target.value)} id="small_outlined" class="border-2 block px-2.5 pb-1.5 pt-3 w-full text-sm text-heading bg-transparent rounded-base border-1 border-default-medium appearance-none focus:outline-none focus:ring-0 focus:border-brand peer" placeholder=" " />
+                                    <label for="small_outlined" class="absolute text-sm text-body duration-300 transform -translate-y-3 scale-75 top-1 z-10 origin-[0] bg-neutral-primary px-2 peer-focus:px-2 peer-focus:text-fg-brand peer-placeholder-shown:scale-100 peer-placeholder-shown:-translate-y-1/2 peer-placeholder-shown:top-1/2 peer-focus:top-1 peer-focus:scale-75 peer-focus:-translate-y-3 start-1 rtl:peer-focus:translate-x-1/4 rtl:peer-focus:left-auto">Course Name</label>
+                                </div>
+                            </div>
+                            <button className="btn btn-primary mt-3" onClick={handleCreate}>Create Course</button>
+                            <button className="btn btn-secondary mt-3" onClick={() => setPageMode("list")}>Go Back</button>
+                        </div>
+                    </div>
+                </div>
+            </div>) :
+            pageMode === "edit" ?
+                (<div style={{ paddingTop: "100px" }} className="container mt-4">
+                    <div className="d-flex mb-3">
+                        <h3>Edit Course</h3>
+                    </div>
 
-                <button
-                    className="btn btn-primary"
-                    onClick={() => setShowCreateModal(true)}
-                >
-                    + Create Course
-                </button>
-            </div>
-            <div class="relative">
-                <input type="text" onChange={(e) => setSearchTerm(e.target.value)} id="floating_outlined" className="border-2 block mb-3 px-2.5 pb-1.5 pt-1.5 w-50 text-sm text-heading bg-transparent rounded-base border-1 border-default-medium appearance-none focus:outline-none focus:ring-0 focus:border-brand peer" placeholder=" " />
-                <label for="floating_outlined" class="absolute text-sm text-body duration-300 transform -translate-y-4 scale-75 top-2 z-10 origin-[0] bg-neutral-primary px-2 peer-focus:px-2 peer-focus:text-fg-brand peer-placeholder-shown:scale-100 peer-placeholder-shown:-translate-y-1/2 peer-placeholder-shown:top-1/2 peer-focus:top-2 peer-focus:scale-75 peer-focus:-translate-y-4 rtl:peer-focus:translate-x-1/4 rtl:peer-focus:left-auto start-1">Search Course</label>
-            </div>
-
-            <div className="card shadow-sm"><div className="card-body">
-            <table className="table table-hover text-center">
-                <thead className="table-light">
-                    <tr>
-                        <th>Sr. No</th>
-                        <th>Course Name</th>
-                        <th width="200">Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {filteredCourses.length > 0 ? (
-                        filteredCourses.map((course, index) => (
-                            <tr key={course.course_Id}>
-                                <td>{index + 1}</td>
-                                <td>{course.course_Name}</td>
-                                <td>
-                                    <div className="dropdown">
-                                        <button
-                                            className="btn btn-sm border btn-primary"
-                                            type="button"
-                                            data-bs-toggle="dropdown"
-                                            aria-expanded="false"
+                    <div className="card shadow-sm">
+                        <div className="card-body">
+                            <div className="d-flex flex-column justify-content-center align-items-center">
+                                <div className="w-50 mt-5">
+                                    <div className="relative">
+                                        <input
+                                            type="text"
+                                            value={editName}
+                                            onChange={(e) => setEditName(e.target.value)}
+                                            id="edit_outlined"
+                                            className="border-2 block px-2.5 pb-1.5 pt-3 w-full text-sm bg-transparent border rounded peer"
+                                            placeholder=" "
+                                        />
+                                        <label
+                                            htmlFor="edit_outlined"
+                                            className="absolute text-sm duration-300 transform -translate-y-3 scale-75 top-1 bg-white px-2 peer-focus:scale-75 peer-placeholder-shown:scale-100 peer-placeholder-shown:top-1/2"
                                         >
-                                            ⋮
-                                        </button>
-
-                                        <ul className="dropdown-menu">
-                                            <li className="">
-                                                <button
-                                                    className="dropdown-item"
-                                                    onClick={() => handleEdit(course)}
-                                                >
-                                                    Edit
-                                                </button>
-                                            </li>
-                                            <li className="">
-                                                <button
-                                                    className="dropdown-item text-danger"
-                                                    onClick={() => handleDelete(course.course_Id)}
-                                                >
-                                                    Delete
-                                                </button>
-                                            </li>
-                                        </ul>
+                                            Course Name
+                                        </label>
                                     </div>
-                                </td>
+                                </div>
 
-                            </tr>
-                        ))
-                    ) : (
-                        <tr>
-                            <td colSpan="3">No courses found</td>
-                        </tr>
+                                <button className="btn btn-success mt-3" onClick={handleUpdate}>
+                                    Update Course
+                                </button>
+
+                                <button
+                                    className="btn btn-secondary m-3"
+                                    onClick={() => setPageMode("list")}
+                                >
+                                    Go Back
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>) :
+                (<div style={{ paddingTop: "100px" }} className="container mt-4">
+                    <div className="d-flex justify-content-between align-items-center mb-3">
+                        <h3>Course Master</h3>
+
+                        <button
+                            className="btn btn-primary"
+                            onClick={() => setPageMode("create")}
+                        >
+                            + Create Course
+                        </button>
+                    </div>
+                    <div className="relative">
+                        <input type="text" onChange={(e) => setSearchTerm(e.target.value)} id="floating_outlined" className="border-2 block mb-3 px-2.5 pb-1.5 pt-1.5 w-50 text-sm text-heading bg-transparent rounded-base border-1 border-default-medium appearance-none focus:outline-none focus:ring-0 focus:border-brand peer" placeholder=" " />
+                        <label htmlFor="floating_outlined" className="absolute text-sm text-body duration-300 transform -translate-y-4 scale-75 top-2 z-10 origin-[0] bg-neutral-primary px-2 peer-focus:px-2 peer-focus:text-fg-brand peer-placeholder-shown:scale-100 peer-placeholder-shown:-translate-y-1/2 peer-placeholder-shown:top-1/2 peer-focus:top-2 peer-focus:scale-75 peer-focus:-translate-y-4 rtl:peer-focus:translate-x-1/4 rtl:peer-focus:left-auto start-1">Search Course</label>
+                    </div>
+
+                    <div className="card shadow-sm"><div className="card-body">
+                        <table className="table table-hover text-center">
+                            <thead className="table-secondary ">
+                                <tr>
+                                    <th>Sr. No</th>
+                                    <th>Course Name</th>
+                                    <th width="200">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {filteredCourses.length > 0 ? (
+                                    filteredCourses.map((course, index) => (
+                                        <tr key={course.course_Id}>
+                                            <td>{index + 1}</td>
+                                            <td>{course.course_Name}</td>
+                                            <td>
+                                                <div className="dropdown">
+                                                    <button
+                                                        className="btn btn-sm border btn-primary"
+                                                        type="button"
+                                                        data-bs-toggle="dropdown"
+                                                        aria-expanded="false"
+                                                    >
+                                                        ⋮
+                                                    </button>
+
+                                                    <ul className="dropdown-menu">
+                                                        <li className="">
+                                                            <button
+                                                                className="dropdown-item"
+                                                                onClick={() => handleEdit(course)}
+                                                            >
+                                                                Edit
+                                                            </button>
+                                                        </li>
+                                                        <li className="">
+                                                            <button
+                                                                className="dropdown-item text-danger"
+                                                                onClick={() => handleDelete(course.course_Id)}
+                                                            >
+                                                                Delete
+                                                            </button>
+                                                        </li>
+                                                    </ul>
+                                                </div>
+                                            </td>
+
+                                        </tr>
+                                    ))
+                                ) : (
+                                    <tr>
+                                        <td colSpan="3">No courses found</td>
+                                    </tr>
+                                )}
+                            </tbody>
+                        </table>
+                    </div></div>
+
+                    {/* EDIT MODAL */}
+                    {showEditModal && (
+                        <div className="modal show d-block" tabIndex="-1">
+                            <div className="modal-dialog">
+                                <div className="modal-content px-4">
+                                    <div className="modal-header">
+                                        <h5 className="modal-title">Edit Course</h5>
+                                        <button
+                                            className="btn-close"
+                                            onClick={() => setShowEditModal(false)}
+                                        ></button>
+                                    </div>
+                                    <div class="relative">
+                                        <input type="text" value={editName} onChange={e => setEditName(e.target.value)} id="small_outlined" class="block px-2.5 pb-1.5 pt-3 w-full text-sm text-heading bg-transparent rounded-base border-1 border-default-medium appearance-none focus:outline-none focus:ring-0 focus:border-brand peer" placeholder=" " />
+                                        <label for="small_outlined" class="absolute text-sm text-body duration-300 transform -translate-y-3 scale-75 top-1 z-10 origin-[0] bg-neutral-primary px-2 peer-focus:px-2 peer-focus:text-fg-brand peer-placeholder-shown:scale-100 peer-placeholder-shown:-translate-y-1/2 peer-placeholder-shown:top-1/2 peer-focus:top-1 peer-focus:scale-75 peer-focus:-translate-y-3 start-1 rtl:peer-focus:translate-x-1/4 rtl:peer-focus:left-auto">Course Name</label>
+                                    </div>
+                                    <div className="modal-footer">
+                                        <button
+                                            className="btn btn-secondary"
+                                            onClick={() => setShowEditModal(false)}
+                                        >
+                                            Cancel
+                                        </button>
+                                        <button className="btn btn-success" onClick={handleUpdate}>
+                                            Update
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     )}
-                </tbody>
-            </table>
-            </div></div>
-
-            {/* EDIT MODAL */}
-            {showEditModal && (
-                <div className="modal show d-block" tabIndex="-1">
-                    <div className="modal-dialog">
-                        <div className="modal-content px-4">
-                            <div className="modal-header">
-                                <h5 className="modal-title">Edit Course</h5>
-                                <button
-                                    className="btn-close"
-                                    onClick={() => setShowEditModal(false)}
-                                ></button>
-                            </div>
-                            <div class="relative">
-                                <input type="text" value={editName} onChange={e=>setEditName(e.target.value)} id="small_outlined" class="block px-2.5 pb-1.5 pt-3 w-full text-sm text-heading bg-transparent rounded-base border-1 border-default-medium appearance-none focus:outline-none focus:ring-0 focus:border-brand peer" placeholder=" " />
-                                <label for="small_outlined" class="absolute text-sm text-body duration-300 transform -translate-y-3 scale-75 top-1 z-10 origin-[0] bg-neutral-primary px-2 peer-focus:px-2 peer-focus:text-fg-brand peer-placeholder-shown:scale-100 peer-placeholder-shown:-translate-y-1/2 peer-placeholder-shown:top-1/2 peer-focus:top-1 peer-focus:scale-75 peer-focus:-translate-y-3 start-1 rtl:peer-focus:translate-x-1/4 rtl:peer-focus:left-auto">Course Name</label>
-                            </div>
-                            <div className="modal-footer">
-                                <button
-                                    className="btn btn-secondary"
-                                    onClick={() => setShowEditModal(false)}
-                                >
-                                    Cancel
-                                </button>
-                                <button className="btn btn-success" onClick={handleUpdate}>
-                                    Update
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* CREATE MODAL */}
-            {showCreateModal && (
-                <div className="modal show d-block" tabIndex="-1">
-                    <div className="modal-dialog">
-                        <div className="modal-content px-4">
-                            <div className="modal-header">
-                                <h5 className="modal-title">Create Course</h5>
-                                <button
-                                    className="btn-close"
-                                    onClick={() => setShowCreateModal(false)}
-                                ></button>
-                            </div>
-                            <div className="modal-body">
-                               <div class="relative">
-                                <input type="text" onChange={e=>setNewCourseName(e.target.value)} id="small_outlined" class="block px-2.5 pb-1.5 pt-3 w-full text-sm text-heading bg-transparent rounded-base border-1 border-default-medium appearance-none focus:outline-none focus:ring-0 focus:border-brand peer" placeholder=" " />
-                                <label for="small_outlined" class="absolute text-sm text-body duration-300 transform -translate-y-3 scale-75 top-1 z-10 origin-[0] bg-neutral-primary px-2 peer-focus:px-2 peer-focus:text-fg-brand peer-placeholder-shown:scale-100 peer-placeholder-shown:-translate-y-1/2 peer-placeholder-shown:top-1/2 peer-focus:top-1 peer-focus:scale-75 peer-focus:-translate-y-3 start-1 rtl:peer-focus:translate-x-1/4 rtl:peer-focus:left-auto">Course Name</label>
-                            </div>
-                            </div>
-                            <div className="modal-footer">
-                                <button
-                                    className="btn btn-secondary"
-                                    onClick={() => setShowCreateModal(false)}
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    className="btn btn-primary"
-                                    onClick={handleCreate}
-                                    disabled={createLoading}
-                                >
-                                    {createLoading ? "Saving..." : "Save"}
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )}
-        </div>
+                </div>)
     );
 };
 
