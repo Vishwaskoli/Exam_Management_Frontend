@@ -6,35 +6,83 @@ const SUB_API = "https://localhost:7248/api/SubjectMaster";
 const MAP_API = "https://localhost:7248/api/SubjectSemMapping";
 
 const Subject_Sem_Mapping = () => {
+  const [viewMode, setViewMode] = useState("list");
+  const [searchTerm, setSearchTerm] = useState("");
+
   const [semesters, setSemesters] = useState([]);
   const [subjects, setSubjects] = useState([]);
+  const [mappings, setMappings] = useState([]);
+
   const [selectedSem, setSelectedSem] = useState("");
   const [selectedSubjects, setSelectedSubjects] = useState([]);
   const [createdBy, setCreatedBy] = useState("");
 
+  const [editingSemId, setEditingSemId] = useState(null);
+
   // =============================
-  // FETCH SEMESTERS
+  // FETCH DATA
   // =============================
   const fetchSemesters = async () => {
     const res = await axios.get(SEM_API);
     setSemesters(res.data);
   };
 
-  // =============================
-  // FETCH SUBJECTS
-  // =============================
   const fetchSubjects = async () => {
     const res = await axios.get(SUB_API);
     setSubjects(res.data);
   };
 
+  const fetchMappings = async () => {
+    const res = await axios.get(MAP_API);
+    console.log("Mappings:", res.data);
+    setMappings(res.data);
+  };
+
+  const getSemesterName = (id) => {
+    const sem = semesters.find((s) => s.sem_Id === id);
+    return sem ? sem.sem_Name : "Unknown";
+  };
+
+  const handleEdit = async (map) => {
+    try {
+      console.log("Edit clicked:", map);
+      setViewMode("edit");
+      setEditingSemId(map.sem_Id);
+      setSelectedSem(map.sem_Id);
+
+      // Get all mappings
+      const res = await axios.get(MAP_API);
+
+      // Filter mappings of selected semester
+      const semesterMappings = res.data.filter(
+        (m) => m.sem_Id === map.sem_Id
+      );
+
+      // Extract subject IDs
+      const subjectIds = semesterMappings.map((m) => m.sub_Id);
+
+      setSelectedSubjects(subjectIds);
+    } catch (err) {
+      console.error("Error loading mapping for edit", err);
+    }
+  };
+
+
   useEffect(() => {
     fetchSemesters();
     fetchSubjects();
+    fetchMappings();
   }, []);
 
   // =============================
-  // HANDLE CHECKBOX CHANGE
+  // FILTERED MAPPINGS
+  // =============================
+  // const filteredMappings = mappings.filter((map) =>
+  // map.subject_Name?.toLowerCase().includes(searchTerm.toLowerCase())
+  // );
+
+  // =============================
+  // HANDLE CHECKBOX
   // =============================
   const handleCheckboxChange = (id) => {
     if (selectedSubjects.includes(id)) {
@@ -45,7 +93,7 @@ const Subject_Sem_Mapping = () => {
   };
 
   // =============================
-  // SAVE MAPPING
+  // SAVE
   // =============================
   const handleSave = async () => {
     if (!selectedSem) {
@@ -57,12 +105,26 @@ const Subject_Sem_Mapping = () => {
       alert("Please select at least one Subject");
       return;
     }
+
     if (!createdBy) {
-      alert("Please enter Created By (User ID)");
+      alert("Please enter User ID");
       return;
     }
 
     try {
+      // If editing → delete old mappings first
+      if (viewMode === "edit") {
+        const res = await axios.get(MAP_API);
+        const oldMappings = res.data.filter(
+          (m) => m.sem_Id === editingSemId
+        );
+
+        for (let item of oldMappings) {
+          await axios.post(`${MAP_API}/Delete/${item.sub_Sem_Map_Id}`);
+        }
+      }
+
+      // Create new mappings
       for (let subId of selectedSubjects) {
         await axios.post(`${MAP_API}/Create`, {
           Sub_Id: subId,
@@ -73,106 +135,222 @@ const Subject_Sem_Mapping = () => {
 
       alert("Mapping saved successfully");
 
+      setViewMode("list");
       setSelectedSubjects([]);
       setSelectedSem("");
+      setEditingSemId(null);
+
+      fetchMappings();
     } catch (err) {
       console.error(err);
-      alert(`Error ${err.message} while saving mapping`);
+      alert("Error while saving mapping");
     }
   };
 
+  // =============================
+  // DELETE
+  // =============================
+  const handleDelete = async (semId) => {
+  if (!window.confirm("Delete all mappings for this semester?")) return;
+
+  try {
+    await axios.post(`${MAP_API}/DeleteBySemester/${semId}`);
+    fetchMappings();
+    alert("All mappings deleted successfully");
+  } catch (err) {
+    console.error(err);
+    alert("Error deleting mappings: " + err.message);
+  }
+  fetchMappings();
+};
+
+//==============================
+// Handel Add
+//==============================
+const handleAdd = () => {
+  setEditingSemId(null);     // clear editing reference
+  setSelectedSem("");        // clear semester
+  setSelectedSubjects([]);   // uncheck all subjects
+  setCreatedBy("");          // clear user id
+  setViewMode("add");        // switch view
+};
+
+
+  const uniqueSemesters = [
+    ...new Map(mappings.map((m) => [m.sem_Id, m])).values(),
+  ];
+
+
   return (
-    <div className="container mt-4">
-      <h3>Subject - Semester Mapping</h3>
+    <div className="container mt-4" style={{ paddingTop: "100px" }}>
 
-      <div className="card shadow-sm p-4 mt-3">
+      {/* ================= LIST VIEW ================= */}
+      {viewMode === "list" && (
+        <>
+          <div className="d-flex justify-content-between align-items-center mb-3">
+            <h3>Subject - Semester Mapping</h3>
 
-        {/* Semester Dropdown */}
-        <div className="relative mb-3">
-          <select
-            id="semesterSelect"
-            value={selectedSem}
-            onChange={(e) => setSelectedSem(e.target.value)}
-            className="peer block w-full bg-transparent text-sm text-heading rounded-base border-1 border-default-medium 
-               appearance-none px-2.5 pt-3 pb-1.5 focus:outline-none focus:ring-0 focus:border-brand"
-          >
-            <option value="">Select Semester</option>
-            {semesters.map((sem) => (
-              <option key={sem.sem_Id} value={sem.sem_Id}>
-                {sem.sem_Name}
-              </option>
-            ))}
-          </select>
+            <div className="d-flex gap-2">
+              <input
+                type="text"
+                className="form-control"
+                placeholder="Search..."
+                style={{ width: "250px" }}
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
 
-          <label
-            htmlFor="semesterSelect"
-            className="absolute left-2.5 top-1 z-10 text-sm text-body duration-300 
-               transform -translate-y-3 scale-75 bg-white px-1 
-               peer-focus:top-1 peer-focus:scale-75 peer-focus:-translate-y-3 
-               peer-placeholder-shown:top-1/2 peer-placeholder-shown:-translate-y-1/2 
-               peer-placeholder-shown:scale-100"
-          >
-            Semester
-          </label>
-        </div>
+              <button
+                className="btn btn-primary"
+                onClick={handleAdd}
+              >
+                + Add Mapping
+              </button>
+            </div>
+          </div>
 
-        {/* Created By */}
-        <div className="relative mb-4">
-          <input
-            type="number"
-            id="createdBy"
-            placeholder=" "
-            value={createdBy}
-            onChange={(e) => setCreatedBy(e.target.value)}
-            className="peer block w-full bg-transparent text-sm text-heading rounded-base border-1 border-default-medium
-               appearance-none px-2.5 pt-3 pb-1.5 focus:outline-none focus:ring-0 focus:border-brand"
-          />
-          <label
-            htmlFor="createdBy"
-            className="absolute left-2.5 top-1 z-10 text-sm text-body duration-300
-               transform -translate-y-3 scale-75 bg-white px-1
-               peer-focus:top-1 peer-focus:scale-75 peer-focus:-translate-y-3
-               peer-placeholder-shown:top-1/2 peer-placeholder-shown:-translate-y-1/2
-               peer-placeholder-shown:scale-100"
-          >
-            Created By (User ID)
-          </label>
-        </div>
+          {/* Table */}
+          {/* TABLE */}
+          <div className="card shadow-sm">
+            <div className="card-body">
+              <table className="table table-hover">
+                <thead className="table-light">
+                  <tr>
+                    <th>Serial Number</th>
+                    <th>Semester</th>
+                    <th width="80">Action</th>
+                  </tr>
+                </thead>
 
-        {/* Subject Checkbox List */}
-        <div className="mb-3">
-          <label className="form-label fw-bold">Select Subjects</label>
+                <tbody>
+                  {uniqueSemesters.length > 0 ? (
+                    uniqueSemesters.map((map, index) => (
+                      <tr key={map.sem_Id}>
+                        <td>{index + 1}</td>
 
-          <div className="row">
-            {subjects.map((sub) => (
-              <div className="col-md-4" key={sub.subject_Id}>
-                <div className="form-check">
-                  <input
-                    className="form-check-input"
-                    type="checkbox"
-                    value={sub.subject_Id}
-                    id={`sub_${sub.subject_Id}`}
-                    checked={selectedSubjects.includes(sub.subject_Id)}
-                    onChange={() => handleCheckboxChange(sub.subject_Id)}
-                  />
-                  <label
-                    className="form-check-label"
-                    htmlFor={`sub_${sub.subject_Id}`}
-                  >
-                    {sub.subject_Name}
-                  </label>
+                        <td>{getSemesterName(map.sem_Id)}</td>
+
+                        <td>
+                          <div className="dropdown">
+                            <button
+                              className="btn btn-sm btn-primary"
+                              type="button"
+                              data-bs-toggle="dropdown"
+                            >
+                              ⋮
+                            </button>
+
+                            <ul className="dropdown-menu">
+                              <li>
+                                <button
+                                  className="dropdown-item"
+                                  onClick={() => handleEdit(map)}
+                                >
+                                  Edit
+                                </button>
+                              </li>
+                              <li>
+                                <button
+                                  className="dropdown-item text-danger"
+                                  onClick={() => handleDelete(map.sem_Id)}
+                                >
+                                  Delete
+                                </button>
+                              </li>
+                            </ul>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan="3" className="text-center">
+                        No Records Found
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* ================= ADD VIEW ================= */}
+      {(viewMode === "add" || viewMode === "edit" ) && (
+        <div className="card shadow-sm p-4 mt-3">
+          <h4 className="mb-3">{viewMode === "edit"
+            ? "Edit Subject - Semester Mapping"
+            : "Add Subject - Semester Mapping"}</h4>
+
+          {/* Semester Dropdown */}
+          <div className="mb-3">
+            <label className="form-label">Semester</label>
+            <select
+              className="form-select"
+              value={selectedSem}
+              onChange={(e) => setSelectedSem(e.target.value)}
+            >
+              <option value="">Select Semester</option>
+              {semesters.map((sem) => (
+                <option key={sem.sem_Id} value={sem.sem_Id}>
+                  {sem.sem_Name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Created By */}
+          <div className="mb-3">
+            <label className="form-label">Created By</label>
+            <input
+              type="number"
+              className="form-control"
+              value={createdBy}
+              onChange={(e) => setCreatedBy(e.target.value)}
+            />
+          </div>
+
+          {/* Subject Checkbox List */}
+          <div className="mb-3">
+            <label className="form-label fw-bold">
+              Select Subjects
+            </label>
+            <div className="row">
+              {subjects.map((sub) => (
+                <div className="col-md-4" key={sub.subject_Id}>
+                  <div className="form-check">
+                    <input
+                      className="form-check-input"
+                      type="checkbox"
+                      checked={selectedSubjects.includes(sub.subject_Id)}
+                      onChange={() =>
+                        handleCheckboxChange(sub.subject_Id)
+                      }
+                    />
+                    <label className="form-check-label">
+                      {sub.subject_Name}
+                    </label>
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
+          </div>
+
+          <div className="d-flex gap-2">
+            <button
+              className="btn btn-secondary"
+              onClick={() => setViewMode("list")}
+            >
+              Cancel
+            </button>
+
+            <button className="btn btn-primary mt-3" onClick={handleSave}>
+              {viewMode === "edit" ? "Update Mapping" : "Save Mapping"}
+            </button>
           </div>
         </div>
-
-        {/* Save Button */}
-        <button className="btn btn-primary mt-3" onClick={handleSave}>
-          Save Mapping
-        </button>
-
-      </div>
+      )}
     </div>
   );
 };

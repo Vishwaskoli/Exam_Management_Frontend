@@ -10,6 +10,7 @@ const Subject_Master = () => {
   const [subjectName, setSubjectName] = useState("");
   const [userId, setUserId] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
+  const [activeAction, setActiveAction] = useState(null); // track which row's menu is open
 
   // =============================
   // FETCH SUBJECTS
@@ -105,7 +106,7 @@ const Subject_Master = () => {
   };
 
   return (
-    <div className="container mt-2">
+    <div className="container mt-2" style={{ paddingTop: "100px" }}>
 
       {/* LIST VIEW */}
       {viewMode === "list" && (
@@ -148,13 +149,37 @@ const Subject_Master = () => {
                       <tr key={sub.subject_Id}>
                         <td>{index + 1}</td>
                         <td>{sub.subject_Name}</td>
-                        <td style={{ position: "relative" }}>
-                          <button
-                            className="btn btn-primary btn-sm"
-                            onClick={() => handleEdit(sub)}
-                          >
-                            ⋮
-                          </button>
+                        <td>
+                          <div className="dropdown">
+                            <button
+                              className="btn btn-sm btn-primary"
+                              type="button"
+                              data-bs-toggle="dropdown"
+                              aria-expanded="false"
+                            >
+                              ⋮
+                            </button>
+
+                            <ul className="dropdown-menu">
+                              <li>
+                                <button
+                                  className="dropdown-item"
+                                  onClick={() => handleEdit(sub)}
+                                >
+                                  Edit
+                                </button>
+                              </li>
+
+                              <li>
+                                <button
+                                  className="dropdown-item text-danger"
+                                  onClick={() => handleDelete(sub.subject_Id)}
+                                >
+                                  Delete
+                                </button>
+                              </li>
+                            </ul>
+                          </div>
                         </td>
 
                       </tr>
