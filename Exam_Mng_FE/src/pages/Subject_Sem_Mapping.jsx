@@ -57,6 +57,10 @@ const Subject_Sem_Mapping = () => {
       alert("Please select at least one Subject");
       return;
     }
+    if (!createdBy) {
+      alert("Please enter Created By (User ID)");
+      return;
+    }
 
     try {
       for (let subId of selectedSubjects) {
@@ -73,7 +77,7 @@ const Subject_Sem_Mapping = () => {
       setSelectedSem("");
     } catch (err) {
       console.error(err);
-      alert("Error saving mapping");
+      alert(`Error ${err.message} while saving mapping`);
     }
   };
 
@@ -84,12 +88,13 @@ const Subject_Sem_Mapping = () => {
       <div className="card shadow-sm p-4 mt-3">
 
         {/* Semester Dropdown */}
-        <div className="form-floating mb-3">
+        <div className="relative mb-3">
           <select
-            className="form-select"
             id="semesterSelect"
             value={selectedSem}
             onChange={(e) => setSelectedSem(e.target.value)}
+            className="peer block w-full bg-transparent text-sm text-heading rounded-base border-1 border-default-medium 
+               appearance-none px-2.5 pt-3 pb-1.5 focus:outline-none focus:ring-0 focus:border-brand"
           >
             <option value="">Select Semester</option>
             {semesters.map((sem) => (
@@ -98,20 +103,40 @@ const Subject_Sem_Mapping = () => {
               </option>
             ))}
           </select>
-          <label htmlFor="semesterSelect">Semester</label>
+
+          <label
+            htmlFor="semesterSelect"
+            className="absolute left-2.5 top-1 z-10 text-sm text-body duration-300 
+               transform -translate-y-3 scale-75 bg-white px-1 
+               peer-focus:top-1 peer-focus:scale-75 peer-focus:-translate-y-3 
+               peer-placeholder-shown:top-1/2 peer-placeholder-shown:-translate-y-1/2 
+               peer-placeholder-shown:scale-100"
+          >
+            Semester
+          </label>
         </div>
 
         {/* Created By */}
-        <div className="form-floating mb-4">
+        <div className="relative mb-4">
           <input
             type="number"
-            className="form-control"
             id="createdBy"
-            placeholder="Created By"
+            placeholder=" "
             value={createdBy}
             onChange={(e) => setCreatedBy(e.target.value)}
+            className="peer block w-full bg-transparent text-sm text-heading rounded-base border-1 border-default-medium
+               appearance-none px-2.5 pt-3 pb-1.5 focus:outline-none focus:ring-0 focus:border-brand"
           />
-          <label htmlFor="createdBy">Created By (User ID)</label>
+          <label
+            htmlFor="createdBy"
+            className="absolute left-2.5 top-1 z-10 text-sm text-body duration-300
+               transform -translate-y-3 scale-75 bg-white px-1
+               peer-focus:top-1 peer-focus:scale-75 peer-focus:-translate-y-3
+               peer-placeholder-shown:top-1/2 peer-placeholder-shown:-translate-y-1/2
+               peer-placeholder-shown:scale-100"
+          >
+            Created By (User ID)
+          </label>
         </div>
 
         {/* Subject Checkbox List */}
