@@ -75,11 +75,12 @@ const Subject_Sem_Mapping = () => {
   }, []);
 
   // =============================
-  // FILTERED MAPPINGS
+  // FILTERED MAPPINGS (SEARCH)
   // =============================
-  // const filteredMappings = mappings.filter((map) =>
-  // map.subject_Name?.toLowerCase().includes(searchTerm.toLowerCase())
-  // );
+//   const filteredSemesters = uniqueSemesters.filter((map) => {
+//   const semName = getSemesterName(map.sem_Id);
+//   return semName?.toLowerCase().includes(searchTerm.toLowerCase());
+// });
 
   // =============================
   // HANDLE CHECKBOX
@@ -180,6 +181,12 @@ const handleAdd = () => {
     ...new Map(mappings.map((m) => [m.sem_Id, m])).values(),
   ];
 
+  const filteredSemesters = uniqueSemesters.filter((map) => {
+  const semName = getSemesterName(map.sem_Id);
+  return searchTerm === ""
+    ? true
+    : semName?.toLowerCase().includes(searchTerm.toLowerCase());
+});
 
   return (
     <div className="container mt-4" style={{ paddingTop: "100px" }}>
@@ -223,8 +230,8 @@ const handleAdd = () => {
                 </thead>
 
                 <tbody>
-                  {uniqueSemesters.length > 0 ? (
-                    uniqueSemesters.map((map, index) => (
+                  {filteredSemesters.length > 0 ? (
+  filteredSemesters.map((map, index) => (
                       <tr key={map.sem_Id}>
                         <td>{index + 1}</td>
 
