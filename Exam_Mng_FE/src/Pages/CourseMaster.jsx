@@ -192,7 +192,7 @@ const CourseMaster = () => {
                                     </div>
                                 </div>
 
-                                <button className="btn btn-success mt-3" onClick={handleUpdate}>
+                                <button className="btn btn-primary mt-3" onClick={handleUpdate}>
                                     Update Course
                                 </button>
 

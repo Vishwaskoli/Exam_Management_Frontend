@@ -342,10 +342,10 @@ const handleAdd = () => {
               className="btn btn-secondary"
               onClick={() => setViewMode("list")}
             >
-              Cancel
+              Cancel 
             </button>
 
-            <button className="btn btn-primary mt-3" onClick={handleSave}>
+            <button className="btn btn-primary" onClick={handleSave}>
               {viewMode === "edit" ? "Update Mapping" : "Save Mapping"}
             </button>
           </div>
