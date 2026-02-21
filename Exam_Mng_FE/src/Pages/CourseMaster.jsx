@@ -210,16 +210,19 @@ const CourseMaster = () => {
                     <div className="d-flex justify-content-between mb-3">
                         <h3>Course Master</h3>
 
-                        <div className="d-flex align-items-start w-50 gap-2">
-                            <input type="text" className="form-control" placeholder="Search course..." onChange={e=>setSearchTerm(e.target.value)} name="" id="" />
-                            <button
-                                className="btn btn-primary w-50"
-                                onClick={() => setPageMode("create")}
-                            >
-                                Add course
-                            </button>
+                        <div className="d-flex gap-2">
+                        <input type="text" onChange={(e) => setSearchTerm(e.target.value)} id="floating_outlined" className="form-control" placeholder="Search Course" style={{ width: "250px" }} />
+                    
+
+                        <button
+                            className="btn btn-primary"
+                            onClick={() => setPageMode("create")}
+                        >
+                            + Create Course
+                        </button>
                         </div>
                     </div>
+                
 
 
                     <div className="card shadow-sm"><div className="card-body">

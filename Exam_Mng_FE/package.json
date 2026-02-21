@@ -10,6 +10,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@coreui/coreui": "^5.5.0",
     "@popperjs/core": "^2.11.8",
     "@tailwindcss/vite": "^4.2.0",
     "bootstrap": "^5.3.8",
