@@ -192,7 +192,7 @@ const CourseMaster = () => {
                                     </div>
                                 </div>
 
-                                <button className="btn btn-success mt-3" onClick={handleUpdate}>
+                                <button className="btn btn-primary mt-3" onClick={handleUpdate}>
                                     Update Course
                                 </button>
 
@@ -207,20 +207,20 @@ const CourseMaster = () => {
                     </div>
                 </div>) :
                 (<div style={{ paddingTop: "100px" }} className="container mt-4">
-                    <div className="d-flex justify-content-between align-items-center mb-3">
+                    <div className="d-flex justify-content-between mb-3">
                         <h3>Course Master</h3>
 
-                        <button
-                            className="btn btn-primary"
-                            onClick={() => setPageMode("create")}
-                        >
-                            + Create Course
-                        </button>
+                        <div className="d-flex align-items-start w-50 gap-2">
+                            <input type="text" className="form-control" placeholder="Search course..." onChange={e=>setSearchTerm(e.target.value)} name="" id="" />
+                            <button
+                                className="btn btn-primary w-50"
+                                onClick={() => setPageMode("create")}
+                            >
+                                Add course
+                            </button>
+                        </div>
                     </div>
-                    <div className="relative">
-                        <input type="text" onChange={(e) => setSearchTerm(e.target.value)} id="floating_outlined" className="border-2 block mb-3 px-2.5 pb-1.5 pt-1.5 w-50 text-sm text-heading bg-transparent rounded-base border-1 border-default-medium appearance-none focus:outline-none focus:ring-0 focus:border-brand peer" placeholder=" " />
-                        <label htmlFor="floating_outlined" className="absolute text-sm text-body duration-300 transform -translate-y-4 scale-75 top-2 z-10 origin-[0] bg-neutral-primary px-2 peer-focus:px-2 peer-focus:text-fg-brand peer-placeholder-shown:scale-100 peer-placeholder-shown:-translate-y-1/2 peer-placeholder-shown:top-1/2 peer-focus:top-2 peer-focus:scale-75 peer-focus:-translate-y-4 rtl:peer-focus:translate-x-1/4 rtl:peer-focus:left-auto start-1">Search Course</label>
-                    </div>
+
 
                     <div className="card shadow-sm"><div className="card-body">
                         <table className="table table-hover text-center">

@@ -1,0 +1,408 @@
+.labels {
+  width: 22%;
+}
+
+.hidden {
+  display: none;
+}
+
+.name {
+  width: 25%;
+
+}
+
+
+.custom-select__input-container {
+  width: 33%;
+}
+
+
+/* styles.css */
+.purple-header th {
+  background-color: rgb(66, 64.5, 160.5) !important;
+  color: #ffffff !important;
+  font-weight: 600;
+  text-align: center;
+  vertical-align: middle;
+}
+
+
+
+
+.address_labels {
+  width: 11%;
+}
+
+.css-b62m3t-container {
+  width: 77%;
+}
+
+.pd_txt {
+  width: 77%;
+}
+
+/* 🌞 Light Theme */
+html[data-coreui-theme="light"] .custom-select__control {
+  background-color: #fff;
+  border-color: #ccc;
+  color: #000;
+}
+
+html[data-coreui-theme="light"] .custom-select__menu {
+  background-color: #fff;
+}
+
+html[data-coreui-theme="light"] .custom-select__option {
+  background-color: #fff;
+  color: #000;
+}
+
+html[data-coreui-theme="light"] .custom-select__option--is-focused {
+  background-color: #e6f7ff;
+}
+
+
+
+/* 🌙 Dark Theme */
+html[data-coreui-theme="dark"] .custom-select__control {
+  background-color: #212631;
+  border-color: #555;
+  color: #fff;
+}
+
+html[data-coreui-theme="dark"] .custom-select__menu {
+  background-color: #212631;
+}
+
+html[data-coreui-theme="dark"] .custom-select__option {
+  background-color: #212631;
+  color: #fff;
+}
+
+html[data-coreui-theme="dark"] .custom-select__option--is-focused {
+  background-color: #212631;
+}
+
+
+html[data-coreui-theme="dark"] .custom-select__single-value {
+
+  color: #fff;
+}
+
+html[data-coreui-theme="dark"] input.custom-select__input {
+  color: #fff !important;
+  /* Fix input text color */
+}
+
+/* Hovering over options */
+html[data-coreui-theme="light"] .custom-select__option:hover {
+  background-color: #e6f7ff;
+  color: #666;
+  /* Text color on hover */
+}
+
+html[data-coreui-theme="dark"] .custom-select__option:hover {
+  background-color: #555;
+  color: #fff;
+  /* Text color on hover */
+}
+
+.sticky-header {
+  position: sticky;
+  top: 0;
+  background-color: white;
+  /* Ensure background doesn't overlap */
+  z-index: 100;
+  /* Keep it above other elements */
+  padding: 10px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  /* Optional: Add a shadow for a clean look */
+}
+
+
+.table-scroll thead th {
+  position: sticky;
+  top: 0;
+  background-color: #0d6efd;
+  /* CoreUI primary */
+  color: white;
+  z-index: 2;
+}
+
+/* Highlight expanded parent menu */
+.expanded {
+  background-color: #f0f0f0;
+  /* Highlight color */
+  color: #007bff;
+  /* Text color when expanded */
+}
+
+/* ============================================================
+   UNIVERSAL FLOATING LABEL (CoreUI + React-Select + DatePicker)
+   FINAL OPTIMIZED VERSION
+===============================================================*/
+
+/* WRAPPER */
+.google-floating-group {
+  position: relative;
+  width: 100%;
+  font-family: 'Inter', system-ui, sans-serif;
+  margin-top: 8px;
+}
+
+/* INPUT / TEXTAREA / SELECT / DATEPICKER */
+/* .google-floating-group input,
+.google-floating-group textarea,
+.google-floating-group .form-control,
+.google-floating-group select,
+.google-floating-group .react-datepicker-wrapper input { */
+.google-floating-group>input,
+.google-floating-group>textarea,
+.google-floating-group>select,
+.google-floating-group .form-control,
+.google-floating-group .react-datepicker-wrapper>input {
+  width: 100%;
+  height: 36px !important;
+  min-height: 36px !important;
+  padding: 6px 12px !important;
+  font-size: 14px !important;
+  line-height: 20px !important;
+  border: 1px solid #cbd5e1 !important;
+  border-radius: 8px !important;
+  background: #fff;
+  outline: none;
+  transition: all 0.18s ease;
+  color: #1f2937;
+  box-sizing: border-box !important;
+}
+
+/* FOCUS EFFECT */
+.google-floating-group input:focus,
+.google-floating-group textarea:focus,
+.google-floating-group select:focus,
+.google-floating-group .form-control:focus {
+  border-color: #6366f1 !important;
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.22) !important;
+}
+
+/* LABEL */
+.google-floating-group label {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 13px;
+  color: #6b7280;
+  pointer-events: none;
+  background: #fff;
+  padding: 0 5px;
+  transition: 0.18s ease;
+  white-space: nowrap;
+  max-width: calc(100% - 24px);
+}
+
+/* FLOATING LABEL (input has value or focused) */
+.google-floating-group input:focus+label,
+.google-floating-group input:not(:placeholder-shown)+label,
+.google-floating-group textarea:focus+label,
+.google-floating-group textarea:not(:placeholder-shown)+label,
+.google-floating-group.has-value label,
+.google-floating-group:focus-within label {
+  top: -7px !important;
+  left: 10px !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  color: #4f46e5 !important;
+  transform: none !important;
+}
+
+
+.google-floating-group .custom-select__control {
+  width: 100% !important;
+  /* full width */
+  min-height: 36px !important;
+  height: 36px !important;
+  padding: 0 8px !important;
+  /* padding for label */
+  border-radius: 8px !important;
+}
+
+.google-floating-group .custom-select__control--is-focused {
+  border-color: #6366f1 !important;
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.22) !important;
+}
+
+
+
+.google-floating-group .custom-select__value-container {
+  width: 100% !important;
+  /* allow full text to show */
+  height: 100% !important;
+  padding: 0 8px !important;
+  /* align text inside control */
+}
+
+/* .google-floating-group .custom-select__placeholder,
+
+.google-floating-group .custom-select__single-value {
+  margin: 0 !important;
+  line-height: 36px !important; 
+  overflow: hidden;             
+  text-overflow: ellipsis;      
+  white-space: nowrap;
+} */
+
+/* ONLY style selected value, NOT typing input */
+.google-floating-group .custom-select__single-value {
+  margin: 0 !important;
+  line-height: 36px !important;
+  white-space: nowrap;
+}
+
+/* Let typing behave naturally */
+.google-floating-group .custom-select__input {
+  line-height: normal !important;
+  margin: 0 !important;
+}
+
+
+
+.google-floating-group .custom-select__indicator {
+  padding: 4px !important;
+  display: flex !important;
+  align-items: center !important;
+}
+
+.google-floating-group .custom-select__indicators {
+  align-items: center !important;
+}
+
+/* FLOAT LABEL: React-Select when value exists */
+.google-floating-group.has-value label {
+  top: -7px !important;
+  left: 10px !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  color: #4f46e5 !important;
+}
+
+/* Hide placeholder when floating */
+.google-floating-group.has-value .custom-select__placeholder {
+  opacity: 0 !important;
+  visibility: hidden !important;
+}
+
+/* ============================================================
+   COREUI SELECT FLOAT FIX
+===============================================================*/
+
+.google-floating-group select:not([value=""])+label {
+  top: -7px !important;
+  left: 10px !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  color: #4f46e5 !important;
+}
+
+/* Empty select placeholder */
+.google-floating-group select[value=""]+label {
+  top: 50% !important;
+  transform: translateY(-50%);
+  font-size: 13px !important;
+  color: #6b7280 !important;
+}
+
+/* ============================================================
+   DATEPICKER FLOAT SUPPORT
+===============================================================*/
+
+.google-floating-group .react-datepicker-wrapper input:not(:placeholder-shown)+label,
+.google-floating-group .react-datepicker-wrapper input:focus+label {
+  top: -7px !important;
+  left: 10px !important;
+  font-size: 11px !important;
+  color: #4f46e5 !important;
+  font-weight: 600 !important;
+}
+
+/* ============================================================
+   ROW SPACING FIX
+===============================================================*/
+
+.custom-row {
+  row-gap: 8px !important;
+  column-gap: 12px !important;
+}
+
+/* ============================================================
+   TABLE STICKY HEADER + LEFT COLUMN
+===============================================================*/
+
+.employee-table {
+  border-collapse: separate !important;
+}
+
+.employee-table thead th {
+  position: sticky !important;
+  top: 0;
+  background: #fff !important;
+  z-index: 5000 !important;
+}
+
+.sticky-col {
+  position: sticky;
+  left: 0;
+  background: #fff !important;
+  z-index: 10 !important;
+  box-shadow: 2px 0 5px -2px rgba(0, 0, 0, 0.1);
+}
+
+/* Completely hide react-select internal typing input */
+/* .google-floating-group .custom-select__input {
+  opacity: 0 !important;
+  width: 100% !important;
+  min-width: 100% !important;
+  max-width: 100% !important;
+  height: 0 !important;
+  overflow: hidden !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border: none !important;
+  grid-area: unset !important; 
+} */
+
+/* .google-floating-group .custom-select__input input {
+  
+  
+  min-width: 0 !important;
+  
+  padding: 0 !important;
+  margin: 0 !important;
+  border: none !important;
+} */
+
+/* Allow typing text to display normally */
+/* Allow typing text to display normally */
+/* .google-floating-group .custom-select__input {
+  opacity: 1 !important;
+  height: auto !important;
+  visibility: visible !important;
+} */
+/* React-Select typing must stay natural */
+.google-floating-group .custom-select__input input {
+  height: auto !important;
+  line-height: normal !important;
+  padding: 0 !important;
+}
+
+/* 🔥 REACT-SELECT SEARCH INPUT – DO NOT STYLE */
+.google-floating-group .custom-select__input input {
+  height: auto !important;
+  min-height: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  line-height: normal !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
