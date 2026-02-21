@@ -138,7 +138,7 @@ const Semester = () => {
                 setIsModalOpen(true);
               }}
             >
-              + Add Semester
+              Add Semester
             </CButton>
           </div>
         </CCardHeader>
@@ -179,6 +179,7 @@ const Semester = () => {
 
                         <CDropdownMenu>
                           <CDropdownItem
+                          className="cursor-pointer"
                             onClick={() => {
                               setForm(item);
                               setIsModalOpen(true);
