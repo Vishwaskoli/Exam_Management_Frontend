@@ -15,8 +15,38 @@ const CourseMaster = () => {
     const [createLoading, setCreateLoading] = useState(false);
     const [createPage, setCreatePage] = useState(true);
     const [pageMode, setPageMode] = useState("list");
+    const [location, setLocation] = useState({ latitude: null, longitude: null });
+    const [locationEnabled, setLocationEnabled] = useState(false);
     // "list" | "create" | "edit"
 
+    //get location access
+    const getCurrentLocation = () => {
+        if (navigator.geolocation) {
+          navigator.geolocation.getCurrentPosition(
+            (position) => {
+              setLocation({
+                latitude: position.coords.latitude,
+                longitude: position.coords.longitude,
+              });
+              setLocationEnabled(true);
+            },
+            (error) => {
+              setErrorMessage("Unable to retrieve location. Please enable location services.");
+              console.error(error);
+              setLocationEnabled(false);
+            }
+          );
+        } else {
+          setErrorMessage("Geolocation is not supported by your browser.");
+          setLocationEnabled(false);
+        }
+      };
+    
+    
+      // Effects
+      useEffect(() => {
+        getCurrentLocation();
+      }, []);
 
     // Fetch Courses
     const fetchCourses = async () => {
@@ -51,6 +81,11 @@ const CourseMaster = () => {
             return;
         }
 
+        if(!locationEnabled){
+            alert("Location access is required to create a course");
+            return;
+        }
+
         try {
             setCreateLoading(true);
 
@@ -62,6 +97,8 @@ const CourseMaster = () => {
                     body: JSON.stringify({
                         course_Name: newCourseName,
                         created_By: 1,
+                        latitude: (location.latitude),
+                        longitude: (location.longitude),
                     }),
                 }
             );
@@ -82,6 +119,11 @@ const CourseMaster = () => {
     const handleDelete = async (id) => {
         if (!window.confirm("Are you sure you want to delete this course?"))
             return;
+
+        // if(!locationEnabled){
+        //     alert("Location access is required to delete a course");
+        //     return;
+        // }
 
         try {
             const response = await fetch(
@@ -111,6 +153,11 @@ const CourseMaster = () => {
             return;
         }
 
+         if(!locationEnabled){
+            alert("Location access is required to edit a course");
+            return;
+        }
+
         try {
             const response = await fetch(
                 `https://localhost:7248/api/CourseMaster/UpdateCourse/${selectedCourse.course_Id}`,
@@ -121,6 +168,8 @@ const CourseMaster = () => {
                         course_Id: selectedCourse.course_Id,
                         course_Name: editName,
                         modified_By: 1,
+                        latitude: (location.latitude),
+                        longitude: (location.longitude),
                     }),
                 }
             );
