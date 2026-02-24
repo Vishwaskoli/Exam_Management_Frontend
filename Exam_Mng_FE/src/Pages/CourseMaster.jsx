@@ -8,7 +8,7 @@ const CourseMaster = () => {
     const [error, setError] = useState("");
     const [searchTerm, setSearchTerm] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
-    const coursesPerPage = 5;
+    const coursesPerPage = 10;
 
     // const [showEditModal, setShowEditModal] = useState(false);
     const [selectedCourse, setSelectedCourse] = useState(null);
@@ -18,6 +18,7 @@ const CourseMaster = () => {
     const [newCourseName, setNewCourseName] = useState("");
     const [createLoading, setCreateLoading] = useState(false);
     // const [createPage, setCreatePage] = useState(true);
+    const [errorMessage, setErrorMessage] = useState("");
     const [pageMode, setPageMode] = useState("list");
     const [location, setLocation] = useState({ latitude: null, longitude: null });
     const [locationEnabled, setLocationEnabled] = useState(false);
@@ -36,7 +37,7 @@ const CourseMaster = () => {
             },
             (error) => {
               setErrorMessage("Unable to retrieve location. Please enable location services.");
-              console.error(error);
+            //   console.error(error);
               setLocationEnabled(false);
             }
           );
