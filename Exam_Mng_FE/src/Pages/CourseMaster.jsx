@@ -37,7 +37,7 @@ const CourseMaster = () => {
             },
             (error) => {
               setErrorMessage("Unable to retrieve location. Please enable location services.");
-            //   console.error(error);
+              console.error(error);
               setLocationEnabled(false);
             }
           );
@@ -346,45 +346,27 @@ const paginate = (pageNumber) => setCurrentPage(pageNumber);
                                 )}
                             </tbody>
                         </table>
-                        {totalPages > 1 && (
-    <div className="d-flex justify-content-center mt-3">
-        <nav>
-            <ul className="pagination">
-                <li className={`page-item ${currentPage === 1 ? "disabled" : ""}`}>
-                    <button
-                        className="page-link"
-                        onClick={() => paginate(currentPage - 1)}
-                    >
-                        Previous
-                    </button>
-                </li>
-
-                {[...Array(totalPages)].map((_, index) => (
-                    <li
-                        key={index}
-                        className={`page-item ${currentPage === index + 1 ? "active" : ""}`}
-                    >
-                        <button
-                            onClick={() => paginate(index + 1)}
-                            className="page-link"
-                        >
-                            {index + 1}
-                        </button>
-                    </li>
-                ))}
-
-                <li className={`page-item ${currentPage === totalPages ? "disabled" : ""}`}>
-                    <button
-                        className="page-link"
-                        onClick={() => paginate(currentPage + 1)}
-                    >
-                        Next
-                    </button>
-                </li>
-            </ul>
-        </nav>
-    </div>
-)}
+                         <div className="d-flex justify-content-between align-items-center mt-2">
+                <div>
+                  Page {currentPage} of {totalPages}
+                </div>
+                <div>
+                  <button
+                    className="btn btn-sm btn-outline-primary me-1"
+                    onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                    disabled={currentPage === 1}
+                  >
+                    Prev
+                  </button>
+                  <button
+                    className="btn btn-sm btn-outline-primary"
+                    onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                    disabled={currentPage === totalPages || totalPages === 0}
+                  >
+                    Next
+                  </button>
+                </div>
+              </div>
                     </div></div>
 
                     {/* EDIT MODAL */}
