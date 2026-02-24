@@ -5,19 +5,22 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap/dist/js/bootstrap.bundle.min';
 import Navbar from './Components/Navbar';
 import Department from './Pages/Departrment';
-// import Temp from './Pages/Temp';
+import Temp from './Pages/Temp';
 
 
 export default function App() {
   return (
     <BrowserRouter>
     <Navbar />
+        <div style={{marginTop:"70px"}} className=''>
       <Routes>
         {/* <Route path="/" element={<Home />} /> */}
         <Route path="/CourseMaster" element={<CourseMaster />} />
-        {/* <Route path="/temp" element={<Temp />} /> */}
+        <Route path="/temp" element={<Temp />} />
         <Route path="/dept" element={<Department/>}/>
+        
       </Routes>
+      </div>
     </BrowserRouter>
   )
 }

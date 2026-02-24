@@ -5,15 +5,17 @@ const CourseMaster = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
     const [searchTerm, setSearchTerm] = useState("");
+    const [currentPage, setCurrentPage] = useState(1);
+const coursesPerPage = 10;
 
-    const [showEditModal, setShowEditModal] = useState(false);
+    // const [showEditModal, setShowEditModal] = useState(false);
     const [selectedCourse, setSelectedCourse] = useState(null);
     const [editName, setEditName] = useState("");
 
-    const [showCreateModal, setShowCreateModal] = useState(false);
+    // const [showCreateModal, setShowCreateModal] = useState(false);
     const [newCourseName, setNewCourseName] = useState("");
     const [createLoading, setCreateLoading] = useState(false);
-    const [createPage, setCreatePage] = useState(true);
+    // const [createPage, setCreatePage] = useState(true);
     const [pageMode, setPageMode] = useState("list");
     const [location, setLocation] = useState({ latitude: null, longitude: null });
     const [locationEnabled, setLocationEnabled] = useState(false);
@@ -74,46 +76,60 @@ const CourseMaster = () => {
         course.course_Name.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
+    // Pagination Logic
+const indexOfLastCourse = currentPage * coursesPerPage;
+const indexOfFirstCourse = indexOfLastCourse - coursesPerPage;
+const currentCourses = filteredCourses.slice(indexOfFirstCourse, indexOfLastCourse);
+
+const totalPages = Math.ceil(filteredCourses.length / coursesPerPage);
+
+const paginate = (pageNumber) => setCurrentPage(pageNumber);
     // CREATE
-    const handleCreate = async () => {
-        if (!newCourseName.trim()) {
-            alert("Course name is required");
-            return;
+   const handleCreate = async () => {
+    if (!newCourseName.trim()) {
+        alert("Course name is required");
+        return;
+    }
+
+    if (!locationEnabled) {
+        alert("Location access is required to create a course");
+        return;
+    }
+
+    try {
+        setCreateLoading(true);
+
+        const response = await fetch(
+            "https://localhost:7248/api/CourseMaster",
+            {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    course_Name: newCourseName,
+                    created_By: 1,
+                    latitude: location.latitude,
+                    longitude: location.longitude,
+                }),
+            }
+        );
+
+        const data = await response.text();
+        console.log("Response:", data);
+
+        if (!response.ok) {
+            throw new Error(data);
         }
 
-        if(!locationEnabled){
-            alert("Location access is required to create a course");
-            return;
-        }
-
-        try {
-            setCreateLoading(true);
-
-            const response = await fetch(
-                "https://localhost:7248/api/CourseMaster",
-                {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        course_Name: newCourseName,
-                        created_By: 1,
-                        latitude: (location.latitude),
-                        longitude: (location.longitude),
-                    }),
-                }
-            );
-
-            if (!response.ok) throw new Error("Failed to create");
-
-            setShowCreateModal(false);
-            setNewCourseName("");
-            fetchCourses();
-        } catch {
-            alert("Error creating course");
-        } finally {
-            setCreateLoading(false);
-        }
-    };
+        setNewCourseName("");
+        setPageMode("list");
+        fetchCourses();
+    } catch (err) {
+        console.error("Create failed:", err);
+        alert("Error creating course. Check console.");
+    } finally {
+        setCreateLoading(false);
+    }
+};
 
     // DELETE
     const handleDelete = async (id) => {
@@ -168,8 +184,8 @@ const CourseMaster = () => {
                         course_Id: selectedCourse.course_Id,
                         course_Name: editName,
                         modified_By: 1,
-                        latitude: (location.latitude),
-                        longitude: (location.longitude),
+                        latitude: location.latitude,
+                        longitude: location.longitude,
                     }),
                 }
             );
@@ -202,9 +218,9 @@ const CourseMaster = () => {
                     <div className="card-body">
                         <div className="d-flex flex-column justify-content-center align-items-center">
                             <div className="w-50 mt-5">
-                                <div class="relative">
-                                    <input type="text" onChange={e => setNewCourseName(e.target.value)} id="small_outlined" class="border-2 block px-2.5 pb-1.5 pt-3 w-full text-sm text-heading bg-transparent rounded-base border-1 border-default-medium appearance-none focus:outline-none focus:ring-0 focus:border-brand peer" placeholder=" " />
-                                    <label for="small_outlined" class="absolute text-sm text-body duration-300 transform -translate-y-3 scale-75 top-1 z-10 origin-[0] bg-neutral-primary px-2 peer-focus:px-2 peer-focus:text-fg-brand peer-placeholder-shown:scale-100 peer-placeholder-shown:-translate-y-1/2 peer-placeholder-shown:top-1/2 peer-focus:top-1 peer-focus:scale-75 peer-focus:-translate-y-3 start-1 rtl:peer-focus:translate-x-1/4 rtl:peer-focus:left-auto">Course Name</label>
+                                <div className="relative">
+                                    <input type="text" onChange={e => setNewCourseName(e.target.value)} id="small_outlined" className="border-2 block px-2.5 pb-1.5 pt-3 w-full text-sm text-heading bg-transparent rounded-base border-1 border-default-medium appearance-none focus:outline-none focus:ring-0 focus:border-brand peer" placeholder=" " />
+                                    <label htmlFor="small_outlined" className="absolute text-sm text-body duration-300 transform -translate-y-3 scale-75 top-1 z-10 origin-[0] bg-neutral-primary px-2 peer-focus:px-2 peer-focus:text-fg-brand peer-placeholder-shown:scale-100 peer-placeholder-shown:-translate-y-1/2 peer-placeholder-shown:top-1/2 peer-focus:top-1 peer-focus:scale-75 peer-focus:-translate-y-3 start-1 rtl:peer-focus:translate-x-1/4 rtl:peer-focus:left-auto">Course Name</label>
                                 </div>
                             </div>
                             <button className="btn btn-primary mt-3" onClick={handleCreate}>Create Course</button>
@@ -282,9 +298,9 @@ const CourseMaster = () => {
                             </thead>
                             <tbody>
                                 {filteredCourses.length > 0 ? (
-                                    filteredCourses.map((course, index) => (
+                                    currentCourses.map((course, index) => (
                                         <tr key={course.course_Id}>
-                                            <td>{index + 1}</td>
+                                            <td>{indexOfFirstCourse+index + 1}</td>
                                             <td>{course.course_Name}</td>
                                             <td>
                                                 <div className="dropdown">
@@ -327,10 +343,49 @@ const CourseMaster = () => {
                                 )}
                             </tbody>
                         </table>
+                        {totalPages > 1 && (
+    <div className="d-flex justify-content-center mt-3">
+        <nav>
+            <ul className="pagination">
+                <li className={`page-item ${currentPage === 1 ? "disabled" : ""}`}>
+                    <button
+                        className="page-link"
+                        onClick={() => paginate(currentPage - 1)}
+                    >
+                        Previous
+                    </button>
+                </li>
+
+                {[...Array(totalPages)].map((_, index) => (
+                    <li
+                        key={index}
+                        className={`page-item ${currentPage === index + 1 ? "active" : ""}`}
+                    >
+                        <button
+                            onClick={() => paginate(index + 1)}
+                            className="page-link"
+                        >
+                            {index + 1}
+                        </button>
+                    </li>
+                ))}
+
+                <li className={`page-item ${currentPage === totalPages ? "disabled" : ""}`}>
+                    <button
+                        className="page-link"
+                        onClick={() => paginate(currentPage + 1)}
+                    >
+                        Next
+                    </button>
+                </li>
+            </ul>
+        </nav>
+    </div>
+)}
                     </div></div>
 
                     {/* EDIT MODAL */}
-                    {showEditModal && (
+                    {/* {showEditModal && (
                         <div className="modal show d-block" tabIndex="-1">
                             <div className="modal-dialog">
                                 <div className="modal-content px-4">
@@ -359,7 +414,7 @@ const CourseMaster = () => {
                                 </div>
                             </div>
                         </div>
-                    )}
+                    )} */}
                 </div>)
     );
 };
