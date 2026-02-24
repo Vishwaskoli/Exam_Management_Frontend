@@ -1,5 +1,5 @@
 import React from 'react'
-import CourseMaster from './pages/CourseMaster';
+import CourseMaster from './Pages/CourseMaster';
 import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap/dist/js/bootstrap.bundle.min';
