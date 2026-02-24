@@ -1,12 +1,14 @@
 import React, { useEffect, useState } from "react";
 
 const CourseMaster = () => {
+    const API_BASE_URL = "https://localhost:7248/api/CourseMaster";
+
     const [courses, setCourses] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
     const [searchTerm, setSearchTerm] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
-const coursesPerPage = 10;
+    const coursesPerPage = 5;
 
     // const [showEditModal, setShowEditModal] = useState(false);
     const [selectedCourse, setSelectedCourse] = useState(null);
@@ -54,7 +56,7 @@ const coursesPerPage = 10;
     const fetchCourses = async () => {
         try {
             const response = await fetch(
-                "https://localhost:7248/api/CourseMaster/ActiveCourses"
+                `${API_BASE_URL}/ActiveCourses`
             );
 
             if (!response.ok) throw new Error("Failed to fetch courses");
@@ -100,7 +102,7 @@ const paginate = (pageNumber) => setCurrentPage(pageNumber);
         setCreateLoading(true);
 
         const response = await fetch(
-            "https://localhost:7248/api/CourseMaster",
+            `${API_BASE_URL}/CreateCourse`,
             {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -143,7 +145,7 @@ const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
         try {
             const response = await fetch(
-                `https://localhost:7248/api/CourseMaster/DeleteCourse/${id}`,
+                `${API_BASE_URL}/DeleteCourse/${id}`,
                 { method: "POST" }
             );
 
@@ -176,7 +178,7 @@ const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
         try {
             const response = await fetch(
-                `https://localhost:7248/api/CourseMaster/UpdateCourse/${selectedCourse.course_Id}`,
+                `${API_BASE_URL}/UpdateCourse/${selectedCourse.course_Id}`,
                 {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
