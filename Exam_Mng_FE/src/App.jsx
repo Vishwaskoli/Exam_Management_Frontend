@@ -4,7 +4,7 @@ import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap/dist/js/bootstrap.bundle.min';
 import Navbar from './Components/Navbar';
-import Department from './Pages/Departrment';
+import Department from './pages/Departrment';
 // import Temp from './Pages/Temp';
 import Subject_Master from "./pages/Subject_Master";
 import Subject_Sem_Mapping from "./pages/Subject_Sem_Mapping";
@@ -13,6 +13,7 @@ function App() {
   return (
     <BrowserRouter>
     <Navbar />
+        <div style={{marginTop:"70px"}} className=''>
       <Routes>
         {/* <Route path="/" element={<Home />} /> */}
         <Route path="/CourseMaster" element={<CourseMaster />} />
@@ -20,7 +21,9 @@ function App() {
         <Route path="/mapping" element={<Subject_Sem_Mapping />} />
         {/* <Route path="/temp" element={<Temp />} /> */}
         <Route path="/dept" element={<Department/>}/>
+        
       </Routes>
+      </div>
     </BrowserRouter>
   )
 }

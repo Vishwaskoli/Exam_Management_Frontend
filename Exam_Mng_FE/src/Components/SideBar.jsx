@@ -19,58 +19,46 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
         } transition-transform duration-300 z-50`}
       >
         <div className="p-5 border-b font-semibold text-lg">
-          Masters
+          Menu
         </div>
 
-        <ul className="flex flex-col p-3 gap-3">
-          <li>
+
+
+        <ul class="navbar-nav d-flex flex-column ms-5 align-items-start flex-grow-1 pe-3">
+          
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+              Masters
+            </a>
+            <ul class="dropdown-menu dropdown-menu">
+              <li>
             <Link
               to="/coursemaster"
               onClick={() => setIsOpen(false)}
-              className="block px-3 py-2 rounded hover:bg-blue-100"
+              className="block px-3 py-2 rounded dropdown-item hover:bg-blue-100"
             >
               Course Master
             </Link>
           </li>
-
-          <li>
+              <li>
             <Link
-              to="/students"
+              to="/subjectmaster"
               onClick={() => setIsOpen(false)}
-              className="block px-3 py-2 rounded hover:bg-blue-100"
+              className="block px-3 py-2 rounded dropdown-item hover:bg-blue-100"
             >
-              Student Master
+              Subject Master
             </Link>
           </li>
-
-          <li>
+              <li>
             <Link
-              to="/faculty"
+              to="/semestermaster"
               onClick={() => setIsOpen(false)}
-              className="block px-3 py-2 rounded hover:bg-blue-100"
+              className="block px-3 py-2 rounded dropdown-item hover:bg-blue-100"
             >
-              Faculty Master
+              Semester Master
             </Link>
           </li>
-
-          <li>
-            <Link
-              to="/subject"
-              onClick={() => setIsOpen(false)}
-              className="block px-3 py-2 rounded hover:bg-blue-100"
-            >
-             Subject Master
-            </Link>
-          </li>
-
-          <li>
-            <Link
-              to="/mapping"
-              onClick={() => setIsOpen(false)}
-              className="block px-3 py-2 rounded hover:bg-blue-100"
-            >
-             Subject Master - Semester Mapping
-            </Link>
+            </ul>
           </li>
         </ul>
       </div>
