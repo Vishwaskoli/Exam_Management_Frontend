@@ -1,25 +1,29 @@
 import React from 'react'
-import CourseMaster from './pages/CourseMaster';
+import CourseMaster from './Pages/CourseMaster';
 import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap/dist/js/bootstrap.bundle.min';
 import Navbar from './Components/Navbar';
 import Department from './Pages/Departrment';
-// import Temp from './Pages/Temp';
-import Subject_Master from "./pages/Subject_Master";
-import Subject_Sem_Mapping from "./pages/Subject_Sem_Mapping";
+import Subject_Master from "./Pages/Subject_Master";
+import Subject_Sem_Mapping from "./Pages/Subject_Sem_Mapping";
+import Course_Sem_Mapping from './Pages/Course_Sem_Mapping';
 
 function App() {
   return (
     <BrowserRouter>
-    <Navbar />
+      <Navbar />
       <Routes>
-        {/* <Route path="/" element={<Home />} /> */}
+
+        {/* ✅ ADD THIS LINE */}
+        <Route path="/" element={<Course_Sem_Mapping />} />
+
         <Route path="/CourseMaster" element={<CourseMaster />} />
         <Route path="/Subject" element={<Subject_Master />} />
         <Route path="/mapping" element={<Subject_Sem_Mapping />} />
-        {/* <Route path="/temp" element={<Temp />} /> */}
-        <Route path="/dept" element={<Department/>}/>
+        <Route path="/dept" element={<Department />} />
+        <Route path="/CourseSem" element={<Course_Sem_Mapping />} />
+
       </Routes>
     </BrowserRouter>
   )

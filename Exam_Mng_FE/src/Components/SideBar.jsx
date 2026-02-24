@@ -72,6 +72,16 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
              Subject Master - Semester Mapping
             </Link>
           </li>
+
+          <li>
+            <Link
+              to="/CourseSem"
+              onClick={() => setIsOpen(false)}
+              className="block px-3 py-2 rounded hover:bg-blue-100"
+            >
+              Course Semester Mapping
+            </Link>
+          </li>
         </ul>
       </div>
     </>

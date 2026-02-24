@@ -97,56 +97,65 @@ const Subject_Sem_Mapping = () => {
   // SAVE
   // =============================
   const handleSave = async () => {
-    if (!selectedSem) {
-      alert("Please select Semester");
-      return;
-    }
 
-    if (selectedSubjects.length === 0) {
-      alert("Please select at least one Subject");
-      return;
-    }
+  if (!selectedCourse) {
+    alert("Please select Course");
+    return;
+  }
 
-    if (!createdBy) {
-      alert("Please enter User ID");
-      return;
-    }
+  if (selectedSemesters.length === 0) {
+    alert("Please select at least one Semester");
+    return;
+  }
 
-    try {
-      // If editing → delete old mappings first
-      if (viewMode === "edit") {
-        const res = await axios.get(MAP_API);
-        const oldMappings = res.data.filter(
-          (m) => m.sem_Id === editingSemId
-        );
+  if (!createdBy) {
+    alert("Please enter User ID");
+    return;
+  }
 
-        for (let item of oldMappings) {
-          await axios.post(`${MAP_API}/Delete/${item.sub_Sem_Map_Id}`);
-        }
+  try {
+
+    // 🔹 If edit mode → delete old mappings first
+    if (viewMode === "edit" && editingCourseId) {
+
+      const res = await axios.get(MAP_API);
+
+      const oldMappings = res.data.filter(
+        (m) => m.course_Id === editingCourseId
+      );
+
+      for (let item of oldMappings) {
+        await axios.post(`${MAP_API}/Delete/${item.course_Sem_Map_Id}`);
       }
-
-      // Create new mappings
-      for (let subId of selectedSubjects) {
-        await axios.post(`${MAP_API}/Create`, {
-          Sub_Id: subId,
-          Sem_Id: parseInt(selectedSem),
-          Created_By: parseInt(createdBy),
-        });
-      }
-
-      alert("Mapping saved successfully");
-
-      setViewMode("list");
-      setSelectedSubjects([]);
-      setSelectedSem("");
-      setEditingSemId(null);
-
-      fetchMappings();
-    } catch (err) {
-      console.error(err);
-      alert("Error while saving mapping");
     }
-  };
+
+    // 🔹 Create new mappings
+    const requests = selectedSemesters.map((semId) =>
+      axios.post(`${MAP_API}/Create`, {
+        Course_Id: parseInt(selectedCourse),
+        Sem_Id: parseInt(semId),
+        Created_By: parseInt(createdBy),
+      })
+    );
+
+    await Promise.all(requests);
+
+    alert("Mapping saved successfully ✅");
+
+    // 🔹 Reset form
+    setViewMode("list");
+    setSelectedCourse("");
+    setSelectedSemesters([]);
+    setEditingCourseId(null);
+
+    // 🔹 Refresh list
+    await fetchMappings();
+
+  } catch (err) {
+    console.error("Save Error:", err.response?.data || err.message);
+    alert("Error while saving mapping ❌");
+  }
+};
 
   // =============================
   // DELETE
