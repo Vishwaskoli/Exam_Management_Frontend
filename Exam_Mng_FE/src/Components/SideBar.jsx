@@ -42,7 +42,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
           </li>
               <li>
             <Link
-              to="/subjectmaster"
+              to="/Subject"
               onClick={() => setIsOpen(false)}
               className="block px-3 py-2 rounded dropdown-item hover:bg-blue-100"
             >
@@ -51,7 +51,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
           </li>
               <li>
             <Link
-              to="/semestermaster"
+              to="/semester"
               onClick={() => setIsOpen(false)}
               className="block px-3 py-2 rounded dropdown-item hover:bg-blue-100"
             >
