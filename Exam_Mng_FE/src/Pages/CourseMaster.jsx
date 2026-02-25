@@ -37,7 +37,7 @@ const CourseMaster = () => {
             },
             (error) => {
               setErrorMessage("Unable to retrieve location. Please enable location services.");
-              console.error(error);
+            //   console.error(error);
               setLocationEnabled(false);
             }
           );
