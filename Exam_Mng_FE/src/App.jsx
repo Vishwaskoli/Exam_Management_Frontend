@@ -16,7 +16,7 @@ function App() {
   return (
     <BrowserRouter>
     <Navbar />
-        <div style={{marginTop:"70px"}} className=''>
+        <div style={{marginTop:"100px"}} className=''>
       <Routes>
         {/* <Route path="/" element={<Home />} /> */}
         <Route path="/CourseMaster" element={<CourseMaster />} />

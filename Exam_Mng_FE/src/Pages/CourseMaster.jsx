@@ -213,7 +213,7 @@ const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
     return (
         pageMode === "create" ?
-            (<div style={{ paddingTop: "100px" }} className="container mt-4">
+            (<div className="container mt-4">
                 <div className="d-flex mb-3">
                     <h3>Course Master</h3>
                 </div>
@@ -233,7 +233,7 @@ const paginate = (pageNumber) => setCurrentPage(pageNumber);
                 </div>
             </div>) :
             pageMode === "edit" ?
-                (<div style={{ paddingTop: "100px" }} className="container mt-4">
+                (<div className="container mt-4">
                     <div className="d-flex mb-3">
                         <h3>Edit Course</h3>
                     </div>
@@ -274,7 +274,7 @@ const paginate = (pageNumber) => setCurrentPage(pageNumber);
                         </div>
                     </div>
                 </div>) :
-                (<div style={{ paddingTop: "100px" }} className="container mt-4">
+                (<div className="container mt-4">
                     <div className="d-flex justify-content-between mb-3">
                         <h3>Course Master</h3>
 
