@@ -9,17 +9,19 @@ import Semester from './pages/Semester';
 // import Temp from './Pages/Temp';
 import Subject_Master from "./pages/Subject_Master";
 import Subject_Sem_Mapping from "./pages/Subject_Sem_Mapping";
+import Result from './pages/Result';
 
 function App() {
   return (
     <BrowserRouter>
-    <Navbar />
+    {/* <Navbar /> */}
       <Routes>
         {/* <Route path="/" element={<Home />} /> */}
         <Route path="/CourseMaster" element={<CourseMaster />} />
         <Route path="/SemesterMaster" element={<Semester />} />
         <Route path="/Subject" element={<Subject_Master />} />
         <Route path="/mapping" element={<Subject_Sem_Mapping />} />
+        <Route path="/ResultMaster" element={<Result />} />
         {/* <Route path="/temp" element={<Temp />} /> */}
         <Route path="/dept" element={<Department/>}/>
       </Routes>
