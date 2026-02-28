@@ -8,6 +8,7 @@ import Department from './pages/Departrment';
 // import Temp from './Pages/Temp';
 import Subject_Master from "./pages/Subject_Master";
 import Subject_Sem_Mapping from "./pages/Subject_Sem_Mapping";
+import ExamMaster from './pages/ExamMaster';
 
 function App() {
   return (
@@ -21,6 +22,7 @@ function App() {
         <Route path="/mapping" element={<Subject_Sem_Mapping />} />
         {/* <Route path="/temp" element={<Temp />} /> */}
         <Route path="/dept" element={<Department/>}/>
+        <Route path="/Exam" element={<ExamMaster />} />
         
       </Routes>
       </div>

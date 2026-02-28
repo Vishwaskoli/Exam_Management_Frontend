@@ -260,11 +260,11 @@ const Subject_Sem_Mapping = () => {
       else if (viewMode === "edit") {
 
         await axios.post(`${MAP_API}/Update`, {
-  Course_Id: parseInt(selectedCourse),
-  Sem_Id: parseInt(selectedSem),
-  SubjectIds: selectedSubjects,
-  Modified_By: parseInt(modifiedBy)
-});
+          Course_Id: parseInt(selectedCourse),
+          Sem_Id: parseInt(selectedSem),
+          SubjectIds: selectedSubjects,
+          Modified_By: parseInt(modifiedBy)
+        });
 
         alert("Mapping updated successfully");
       }
