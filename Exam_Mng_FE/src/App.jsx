@@ -8,6 +8,8 @@ import Department from './Pages/Departrment';
 import Subject_Master from "./Pages/Subject_Master";
 import Subject_Sem_Mapping from "./Pages/Subject_Sem_Mapping";
 import Course_Sem_Mapping from './Pages/Course_Sem_Mapping';
+import Report from './Pages/Report';
+
 
 function App() {
   return (
@@ -16,13 +18,14 @@ function App() {
       <Routes>
 
         {/* ✅ ADD THIS LINE */}
-        <Route path="/" element={<Course_Sem_Mapping />} />
+        {/* <Route path="/" element={<Course_Sem_Mapping />} /> */}
 
         <Route path="/CourseMaster" element={<CourseMaster />} />
         <Route path="/Subject" element={<Subject_Master />} />
         <Route path="/mapping" element={<Subject_Sem_Mapping />} />
         <Route path="/dept" element={<Department />} />
         <Route path="/CourseSem" element={<Course_Sem_Mapping />} />
+        <Route path="/Report" element={<Report />} />
 
       </Routes>
     </BrowserRouter>

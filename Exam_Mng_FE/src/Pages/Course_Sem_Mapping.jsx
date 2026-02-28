@@ -47,7 +47,26 @@ const Course_Sem_Mapping = () => {
     return course ? course.course_Name : "Unknown";
   };
 
-  // ================= HANDLE ADD =================
+  // ================= GET LOCATION =================
+  const getLocation = () => {
+    return new Promise((resolve, reject) => {
+      if (!navigator.geolocation) {
+        reject("Geolocation not supported");
+      } else {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            resolve({
+              latitude: position.coords.latitude,
+              longitude: position.coords.longitude,
+            });
+          },
+          () => reject("Location permission denied")
+        );
+      }
+    });
+  };
+
+  // ================= ADD =================
   const handleAdd = () => {
     setEditingCourseId(null);
     setSelectedCourse("");
@@ -57,20 +76,22 @@ const Course_Sem_Mapping = () => {
     setViewMode("add");
   };
 
-  // ================= HANDLE EDIT =================
+  // ================= EDIT =================
   const handleEdit = (map) => {
     setViewMode("edit");
     setEditingCourseId(map.course_Id);
     setSelectedCourse(map.course_Id);
 
-    const courseMappings = mappings.filter((m) => m.course_Id === map.course_Id);
+    const courseMappings = mappings.filter(
+      (m) => m.course_Id === map.course_Id
+    );
     const semIds = courseMappings.map((m) => m.sem_Id);
 
     setSelectedSemesters(semIds);
     setErrors({});
   };
 
-  // ================= HANDLE CHECKBOX =================
+  // ================= CHECKBOX =================
   const handleCheckboxChange = (id) => {
     if (selectedSemesters.includes(id)) {
       setSelectedSemesters(selectedSemesters.filter((x) => x !== id));
@@ -80,94 +101,96 @@ const Course_Sem_Mapping = () => {
   };
 
   // ================= SAVE =================
-  const handleSave = async () => {
-    const validationErrors = {};
+const handleSave = async () => {
+  try {
 
-    if (!selectedCourse) validationErrors.course = "Please select a course";
-    if (selectedSemesters.length === 0)
-      validationErrors.semesters = "Please select at least one semester";
-    if (!createdBy) validationErrors.createdBy = "Please enter Created By (User ID)";
+    if (!selectedCourse || selectedSemesters.length === 0 || !createdBy) {
+      alert("⚠️ Please fill all required fields");
+      return;
+    }
 
-    // Check for duplicate semesters (only for add)
-    if (viewMode === "add") {
-      const existingMappings = mappings.filter(
-        (m) => m.course_Id === parseInt(selectedCourse)
+    // Duplicate check
+    const duplicate = selectedSemesters.some((semId) =>
+      mappings.some(
+        (m) =>
+          m.course_Id === parseInt(selectedCourse) &&
+          m.sem_Id === semId
+      )
+    );
+
+    if (duplicate && viewMode === "add") {
+      alert("❌ Course Already Exist");
+      return;
+    }
+
+    const location = await getLocation();
+
+    // EDIT MODE → delete old mappings first
+    if (viewMode === "edit") {
+      const oldMappings = mappings.filter(
+        (m) => m.course_Id === editingCourseId
       );
-      const duplicateSem = selectedSemesters.some((semId) =>
-        existingMappings.some((m) => m.sem_Id === semId)
-      );
-      if (duplicateSem) {
-        validationErrors.duplicate = "Semester Already Exists for this Course";
+
+      for (const item of oldMappings) {
+        await axios.post(`${MAP_API}/Delete`, item);
       }
     }
 
-    setErrors(validationErrors);
-    if (Object.keys(validationErrors).length > 0) return;
+    // INSERT
+   for (const semId of selectedSemesters) {
+  await axios.post(`${MAP_API}/INSERT`, {
+    Course_Sem_Map_Id: 0,
+    Course_Id: parseInt(selectedCourse),
+    Sem_Id: semId,
+    Created_By: parseInt(createdBy),
+    Latitude: location.latitude,
+    Longitude: location.longitude
+  });
+}
 
-    try {
-      // If edit → delete old mappings
-      if (viewMode === "edit") {
-        const oldMappings = mappings.filter((m) => m.course_Id === editingCourseId);
-        for (let item of oldMappings) {
-          await axios.post(`${MAP_API}/Delete`, {
-            Course_Sem_Map_Id: item.Course_Sem_Map_Id,
-            Course_Id: item.Course_Id,
-            Sem_Id: item.Sem_Id,
-            Created_By: item.Created_By
-          });
-        }
-      }
+    alert("✅ Mapping Saved Successfully");
 
-      // Save new mappings
-      for (let semId of selectedSemesters) {
-        await axios.post(`${MAP_API}/Insert`, {
-          Course_Id: parseInt(selectedCourse),
-          Sem_Id: semId,
-          Created_By: parseInt(createdBy)
-        });
-      }
+    setViewMode("list");
+    setSelectedCourse("");
+    setSelectedSemesters([]);
+    setCreatedBy("");
+    setEditingCourseId(null);
 
-      alert("Mapping saved successfully ✅");
+    fetchMappings();
 
-      setViewMode("list");
-      setSelectedCourse("");
-      setSelectedSemesters([]);
-      setCreatedBy("");
-      setEditingCourseId(null);
-      setErrors({});
-
-      fetchMappings();
-    } catch (err) {
-      console.error(err);
-      alert("Error while saving mapping ❌");
-    }
-  };
+  } catch (error) {
+    alert("❌ Location permission required");
+  }
+};
 
   // ================= DELETE =================
   const handleDelete = async (courseId) => {
-    if (!window.confirm("Delete all mappings for this course?")) return;
+  if (!window.confirm("Delete all mappings for this course?")) return;
 
-    try {
-      const courseMappings = mappings.filter((m) => m.course_Id === courseId);
-      for (let item of courseMappings) {
-        await axios.post(`${MAP_API}/Delete`, {
-          Course_Sem_Map_Id: item.Course_Sem_Map_Id,
-          Course_Id: item.Course_Id,
-          Sem_Id: item.Sem_Id,
-          Created_By: item.Created_By
-        });
-      }
+  try {
+    const courseMappings = mappings.filter(
+      (m) => m.course_Id === courseId
+    );
 
-      alert("All mappings deleted successfully ✅");
-      fetchMappings();
-    } catch (err) {
-      console.error(err);
-      alert("Error deleting mappings ❌");
+    for (let item of courseMappings) {
+      await axios.post(`${MAP_API}/DELETE`, {
+        Course_Sem_Map_Id: item.course_Sem_Map_Id,
+        Modified_By: parseInt(createdBy || 1)
+      });
     }
-  };
 
+    alert("Mappings deleted successfully ✅");
+    fetchMappings();
+  } catch (err) {
+    console.error(err.response?.data);
+    alert("Error deleting mappings ❌");
+  }
+};
   // ================= UNIQUE COURSES =================
-  const uniqueCourses = [...new Map(mappings.map((m) => [m.course_Id, m])).values()];
+  const uniqueCourses = [
+    ...new Map(mappings.map((m) => [m.course_Id, m])).values(),
+  ];
+
   const filteredCourses = uniqueCourses.filter((map) => {
     const courseName = getCourseName(map.course_Id);
     return searchTerm === ""
@@ -202,7 +225,7 @@ const Course_Sem_Mapping = () => {
               <table className="table table-hover">
                 <thead className="table-light">
                   <tr>
-                    <th>Serial Number</th>
+                    <th>Serial</th>
                     <th>Course</th>
                     <th width="80">Action</th>
                   </tr>
@@ -234,7 +257,9 @@ const Course_Sem_Mapping = () => {
                               <li>
                                 <button
                                   className="dropdown-item text-danger"
-                                  onClick={() => handleDelete(map.course_Id)}
+                                  onClick={() =>
+                                    handleDelete(map.course_Id)
+                                  }
                                 >
                                   Delete
                                 </button>
@@ -267,11 +292,10 @@ const Course_Sem_Mapping = () => {
               : "Add Course - Semester Mapping"}
           </h4>
 
-          {/* Course Dropdown */}
           <div className="mb-3">
             <label className="form-label">Course</label>
             <select
-              className={`form-select ${errors.course ? "is-invalid" : ""}`}
+              className="form-select"
               value={selectedCourse}
               onChange={(e) => setSelectedCourse(e.target.value)}
               disabled={viewMode === "edit"}
@@ -283,30 +307,20 @@ const Course_Sem_Mapping = () => {
                 </option>
               ))}
             </select>
-            {errors.course && <div className="invalid-feedback">{errors.course}</div>}
           </div>
 
-          {/* Created By */}
           <div className="mb-3">
             <label className="form-label">Created By</label>
             <input
               type="number"
-              className={`form-control ${errors.createdBy ? "is-invalid" : ""}`}
+              className="form-control"
               value={createdBy}
               onChange={(e) => setCreatedBy(e.target.value)}
             />
-            {errors.createdBy && <div className="invalid-feedback">{errors.createdBy}</div>}
           </div>
 
-          {/* Semester Checkboxes */}
           <div className="mb-3">
             <label className="form-label fw-bold">Select Semesters</label>
-            {errors.semesters && (
-              <div className="text-danger mb-2">{errors.semesters}</div>
-            )}
-            {errors.duplicate && (
-              <div className="text-danger mb-2">{errors.duplicate}</div>
-            )}
             <div className="row">
               {semesters.map((sem) => {
                 const isSelected = selectedSemesters.includes(sem.sem_Id);
@@ -314,19 +328,22 @@ const Course_Sem_Mapping = () => {
                   <div className="col-md-4 mb-2" key={sem.sem_Id}>
                     <div
                       className={`form-check border rounded p-2 ${
-                        isSelected ? "bg-primary text-white" : "bg-white"
+                        isSelected ? "bg-primary text-white" : ""
                       }`}
+                      onClick={() =>
+                        handleCheckboxChange(sem.sem_Id)
+                      }
                       style={{ cursor: "pointer" }}
-                      onClick={() => handleCheckboxChange(sem.sem_Id)}
                     >
                       <input
                         className="form-check-input"
                         type="checkbox"
                         checked={isSelected}
-                        onChange={() => handleCheckboxChange(sem.sem_Id)}
-                        style={{ cursor: "pointer" }}
+                        readOnly
                       />
-                      <label className="form-check-label ms-2">{sem.sem_Name}</label>
+                      <label className="form-check-label ms-2">
+                        {sem.sem_Name}
+                      </label>
                     </div>
                   </div>
                 );
