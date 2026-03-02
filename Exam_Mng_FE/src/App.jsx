@@ -10,11 +10,15 @@ import Semester from './pages/Semester';
 import Subject_Master from "./pages/Subject_Master";
 import Subject_Sem_Mapping from "./pages/Subject_Sem_Mapping";
 // <<<<<<< HEAD
+// <<<<<<< HEAD
 import Result from './pages/Result';
 // =======
 import Temp from './Pages/Temp';
 import { StudentMaster } from './Pages/StudentMaster';
 // >>>>>>> origin/Vishwas
+// =======
+import ExamMaster from './pages/ExamMaster';
+// >>>>>>> origin/Shreyash
 
 function App() {
   return (
@@ -39,7 +43,12 @@ function App() {
         {/* <Route path="/temp" element={<Temp />} /> */}
         <Route path="/temp" element={<Temp />} />
         <Route path="/dept" element={<Department/>}/>
+{/* <<<<<<< HEAD */}
         <Route path="/studentmaster" element={<StudentMaster/>}/>
+{/* ======= */}
+        <Route path="/Exam" element={<ExamMaster />} />
+        
+{/* >>>>>>> origin/Shreyash */}
       </Routes>
       </div>
     </BrowserRouter>

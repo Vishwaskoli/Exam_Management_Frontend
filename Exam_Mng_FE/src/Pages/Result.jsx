@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import {
   getResults,
   saveResult,
@@ -6,6 +6,10 @@ import {
 } from "../services/resultService";
 import axios from "axios";
 import { ToastContainer, toast } from "react-toastify";
+import * as XLSX from "xlsx";
+import { saveAs } from "file-saver";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 import "react-toastify/dist/ReactToastify.css";
 
 const API_BASE = "https://localhost:7248/api";
@@ -19,8 +23,40 @@ const initialFormState = {
   subjectId: "",
   obtainedMarks: "",
   totalMarks: "",
+  longitude: null,
+  latitude: null,
   createdBy: 1,
   modifiedBy: 1,
+};
+
+const getLocation = () => {
+  if (!navigator.geolocation) {
+    toast.error("Geolocation not supported");
+    return;
+  }
+
+  navigator.geolocation.getCurrentPosition(
+    (position) => {
+      const { latitude, longitude } = position.coords;
+
+      setForm((prev) => ({
+        ...prev,
+        latitude: latitude,
+        longitude: longitude,
+      }));
+
+      toast.success("Location captured ✅");
+    },
+    (error) => {
+      console.error(error);
+      toast.error("Location permission denied ❌");
+    },
+    {
+      enableHighAccuracy: true,
+      timeout: 10000,
+      maximumAge: 0,
+    }
+  );
 };
 
 const Result = () => {
@@ -31,9 +67,12 @@ const Result = () => {
   const [students, setStudents] = useState([]);
   const [subjects, setSubjects] = useState([]);
 
-  const [pageMode, setPageMode] = useState("list");
   const [form, setForm] = useState(initialFormState);
-  const [loading, setLoading] = useState(false);
+  const [pageMode, setPageMode] = useState("list");
+
+  const [searchTerm, setSearchTerm] = useState("");
+  const [pageSize] = useState(5);
+  const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
     loadInitialData();
@@ -41,8 +80,6 @@ const Result = () => {
 
   const loadInitialData = async () => {
     try {
-      setLoading(true);
-
       const res = await getResults();
       setResults(res.data);
 
@@ -50,291 +87,380 @@ const Result = () => {
         `${API_BASE}/CourseMaster/ActiveCourses`
       );
       setCourses(courseRes.data);
-    } catch (err) {
+    } catch {
       toast.error("Failed to load data");
-    } finally {
-      setLoading(false);
     }
   };
 
-  // ================= CASCADING =================
+  // ================= RESET FORM PROPERLY =================
+  const resetForm = () => {
+    setForm(initialFormState);
+    setSemesters([]);
+    setExams([]);
+    setStudents([]);
+    setSubjects([]);
+  };
 
-const handleCourseChange = async (courseId) => {
-  setForm({ ...initialFormState, courseId });
+  // ================= CASCADING LOADERS =================
 
-  try {
+  const loadSemestersAndStudents = async (courseId) => {
+    if (!courseId) return;
+
     const semRes = await axios.get(
       `${API_BASE}/SemesterMaster/ByCourse/${courseId}`
     );
     setSemesters(semRes.data);
 
     const stuRes = await axios.get(`${API_BASE}/Student`);
-
-    console.log("Students from API:", stuRes.data); // 👈 DEBUG
-
-    const filteredStudents = stuRes.data.filter(
-      s => s.courseId == parseInt(courseId)   // ⚠ must match backend property name
+    const filtered = stuRes.data.filter(
+      (s) => s.courseId == parseInt(courseId)
     );
-
-    setStudents(filteredStudents);
-    console.log("Selected Course:", courseId);
-console.log("Filtered:", filteredStudents);
-
-  } catch (err) {
-    console.error(err);
-    toast.error("Failed to load related data");
-  }
-};
-  const handleSemesterChange = async (semId) => {
-    setForm((prev) => ({
-      ...prev,
-      semId,
-      examId: "",
-      subjectId: "",
-      totalMarks: "",
-    }));
-
-    try {
-      const examRes = await axios.get(
-        `${API_BASE}/ExamMaster/GetByCourseSem?courseId=${form.courseId}&semId=${semId}`
-      );
-      setExams(examRes.data);
-
-      const subRes = await axios.get(
-        `${API_BASE}/SubjectSemMapping/GetSubjects?courseId=${form.courseId}&semId=${semId}`
-      );
-      setSubjects(subRes.data);
-    } catch {
-      toast.error("Failed to load exams/subjects");
-    }
+    setStudents(filtered);
   };
+
+  const loadExamsAndSubjects = async (courseId, semId) => {
+    if (!courseId || !semId) return;
+
+    const examRes = await axios.get(
+      `${API_BASE}/ExamMaster/GetByCourseSem?courseId=${courseId}&semId=${semId}`
+    );
+    setExams(examRes.data);
+
+    const subRes = await axios.get(
+      `${API_BASE}/SubjectSemMapping/GetSubjects?courseId=${courseId}&semId=${semId}`
+    );
+    setSubjects(subRes.data);
+  };
+
+  const handleCourseChange = async (courseId) => {
+    resetForm();
+    setForm((prev) => ({ ...prev, courseId }));
+    await loadSemestersAndStudents(courseId);
+  };
+
+  const handleSemesterChange = async (semId) => {
+  const courseId = form.courseId;
+
+  setForm((prev) => ({
+    ...prev,
+    semId,
+    examId: "",
+    subjectId: "",
+  }));
+
+  await loadExamsAndSubjects(courseId, semId);
+};
 
   const handleExamChange = async (examId) => {
-    try {
-      const res = await axios.get(
-        `${API_BASE}/ExamMaster/GetTotalMarks/${examId}`
-      );
-
-      setForm((prev) => ({
-        ...prev,
-        examId,
-        totalMarks: res.data.totalMarks,
-      }));
-    } catch {
-      toast.error("Failed to fetch total marks");
-    }
-  };
-
-  // ================= CALCULATIONS =================
-
-  const percentage =
-    form.totalMarks && form.obtainedMarks
-      ? ((form.obtainedMarks / form.totalMarks) * 100).toFixed(1)
-      : 0;
-
-  const calculateGrade = (percent) => {
-    if (percent >= 75) return "A";
-    if (percent >= 60) return "B";
-    if (percent >= 50) return "C";
-    if (percent >= 40) return "D";
-    return "F";
-  };
-
-  const grade = calculateGrade(percentage);
-
-  // ================= DUPLICATE CHECK =================
-
-  const isDuplicate = () => {
-    return results.some(
-      (r) =>
-        r.studentId === parseInt(form.studentId) &&
-        r.examId === parseInt(form.examId) &&
-        r.subjectId === parseInt(form.subjectId) &&
-        r.resultId !== form.resultId
+    const res = await axios.get(
+      `${API_BASE}/ExamMaster/GetTotalMarks/${examId}`
     );
+    setForm((prev) => ({
+      ...prev,
+      examId,
+      totalMarks: res.data.totalMarks,
+    }));
   };
+
+  // ================= EDIT FIXED =================
+  const handleEdit = async (row) => {
+  console.log("Edit row:", row);
+
+  resetForm();
+
+  try {
+    // 1️⃣ Load semesters + students
+    await loadSemestersAndStudents(row.courseId);
+
+    // 2️⃣ Load exams + subjects
+    await loadExamsAndSubjects(row.courseId, row.semId);
+
+    // 3️⃣ Now set form AFTER options are loaded
+    setForm({
+  resultId: row.resultId,
+  courseId: String(row.courseId),
+  semId: String(row.semId),
+  examId: String(row.examId),
+  studentId: String(row.studentId),
+  subjectId: String(row.subjectId),
+  obtainedMarks: row.obtainedMarks,
+  totalMarks: row.totalMarks,
+  createdBy: 1,
+  modifiedBy: 1,
+});
+
+    setPageMode("edit");
+  } catch (err) {
+    console.error(err);
+    toast.error("Failed to load edit data");
+  }
+};
 
   // ================= SAVE =================
-
-  const handleSave = async () => {
-    if (!form.courseId) return toast.error("Select Course");
-    if (!form.semId) return toast.error("Select Semester");
-    if (!form.examId) return toast.error("Select Exam");
-    if (!form.studentId) return toast.error("Select Student");
-    if (!form.subjectId) return toast.error("Select Subject");
-
-    if (!form.obtainedMarks)
-      return toast.error("Enter Obtained Marks");
-
-    if (form.obtainedMarks > form.totalMarks)
-      return toast.error("Obtained marks cannot exceed total");
-
-    if (isDuplicate())
-      return toast.error("Duplicate result for same student + exam + subject");
-
-    try {
-      await saveResult(form);
-      toast.success("Result saved successfully 🎉");
-
-      setForm(initialFormState);
-      setPageMode("list");
-      loadInitialData();
-    } catch {
-      toast.error("Save failed");
+ const handleSave = async () => {
+  try {
+    // If location not captured yet, get it first
+    if (!form.latitude || !form.longitude) {
+      await new Promise((resolve) => {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            setForm((prev) => ({
+              ...prev,
+              latitude: position.coords.latitude,
+              longitude: position.coords.longitude,
+            }));
+            resolve();
+          },
+          () => {
+            toast.error("Location required");
+            resolve();
+          }
+        );
+      });
     }
-  };
 
-  // ================= EDIT =================
-
-  const handleEdit = (data) => {
-    setForm({
-      ...data,
+    await saveResult({
+      ...form,
+      courseId: parseInt(form.courseId),
+      semId: parseInt(form.semId),
+      examId: parseInt(form.examId),
+      studentId: parseInt(form.studentId),
+      subjectId: parseInt(form.subjectId),
+      longitude: form.longitude,
+      latitude: form.latitude,
     });
-    setPageMode("edit");
-  };
+
+    toast.success(pageMode === "edit" ? "Updated 🎉" : "Saved 🎉");
+
+    resetForm();
+    setPageMode("list");
+    loadInitialData();
+  } catch (err) {
+    toast.error("Save failed");
+  }
+};
 
   // ================= DELETE =================
-
   const handleDelete = async (id) => {
     if (!window.confirm("Delete this result?")) return;
-
-    try {
-      await deleteResult({ resultId: id, modifiedBy: 1 });
-      toast.success("Deleted successfully");
-      loadInitialData();
-    } catch {
-      toast.error("Delete failed");
-    }
+    await deleteResult({ resultId: id, modifiedBy: 1 });
+    toast.success("Deleted");
+    loadInitialData();
   };
 
-  // ================= UI =================
+  // ================= SEARCH =================
+  const filteredResults = useMemo(() => {
+    return results.filter((r) =>
+      r.studentName?.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [results, searchTerm]);
+
+  // ================= PAGINATION =================
+  const totalPages = Math.ceil(filteredResults.length / pageSize);
+
+  const paginatedResults = filteredResults.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize
+  );
+
+  // ================= EXCEL EXPORT =================
+  const exportToExcel = () => {
+    const worksheet = XLSX.utils.json_to_sheet(filteredResults);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Results");
+    const buffer = XLSX.write(workbook, {
+      bookType: "xlsx",
+      type: "array",
+    });
+    saveAs(new Blob([buffer]), "Results.xlsx");
+  };
+
+  // ================= ALL PDF EXPORT =================
+  const exportAllPDF = () => {
+    const doc = new jsPDF();
+
+    autoTable(doc, {
+      head: [["Student", "Exam", "Marks"]],
+      body: filteredResults.map((r) => [
+        r.studentName,
+        r.examName,
+        `${r.obtainedMarks}/${r.totalMarks}`,
+      ]),
+    });
+
+    doc.save("All_Results.pdf");
+  };
+
+  // ================= INDIVIDUAL PDF =================
+  const exportStudentPDF = (r) => {
+    const doc = new jsPDF();
+    const percent = (
+      (r.obtainedMarks / r.totalMarks) *
+      100
+    ).toFixed(1);
+
+    doc.text("Student Result Report", 14, 20);
+    doc.text(`Student: ${r.studentName}`, 14, 40);
+    doc.text(`Exam: ${r.examName}`, 14, 50);
+    doc.text(`Marks: ${r.obtainedMarks}/${r.totalMarks}`, 14, 60);
+    doc.text(`Percentage: ${percent}%`, 14, 70);
+
+    doc.save(`${r.studentName}_Report.pdf`);
+  };
 
   return (
     <div className="container mt-4" style={{ paddingTop: "100px" }}>
       <ToastContainer autoClose={2000} />
 
+      {/* ================= LIST ================= */}
       {pageMode === "list" && (
         <>
           <div className="d-flex justify-content-between mb-3">
             <h3>Result Master</h3>
-            <button
-              className="btn btn-primary"
-              onClick={() => setPageMode("create")}
-            >
-              + Add Result
-            </button>
+            <div>
+              <button
+                className="btn btn-success me-2"
+                onClick={() => {
+                  resetForm();
+                  setPageMode("create");
+                }}
+              >
+                + Add
+              </button>
+              <button
+                className="btn btn-outline-success me-2"
+                onClick={exportToExcel}
+              >
+                Excel
+              </button>
+              <button
+                className="btn btn-outline-danger"
+                onClick={exportAllPDF}
+              >
+                PDF
+              </button>
+            </div>
           </div>
 
-          <div className="card shadow-sm">
-            <div className="card-body">
-              {loading ? (
-                <div className="text-center">Loading...</div>
-              ) : (
-                <table className="table table-hover text-center">
-                  <thead className="table-secondary">
-                    <tr>
-                      <th>Student</th>
-                      <th>Exam</th>
-                      <th>Marks</th>
-                      <th>%</th>
-                      <th>Grade</th>
-                      <th width="120">Action</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {results.map((r) => {
-                      const percent = (
-                        (r.obtainedMarks / r.totalMarks) *
-                        100
-                      ).toFixed(1);
+          <input
+            className="form-control mb-3"
+            placeholder="Search Student..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
 
-                      return (
-                        <tr key={r.resultId}>
-                          <td>{r.studentName}</td>
-                          <td>{r.examName}</td>
-                          <td>
-                            {r.obtainedMarks}/{r.totalMarks}
-                          </td>
-                          <td>{percent}%</td>
-                          <td>{calculateGrade(percent)}</td>
-                          <td>
-                            <button
-                              className="btn btn-sm btn-warning me-2"
-                              onClick={() => handleEdit(r)}
-                            >
-                              Edit
-                            </button>
-                            <button
-                              className="btn btn-sm btn-danger"
-                              onClick={() =>
-                                handleDelete(r.resultId)
-                              }
-                            >
-                              Delete
-                            </button>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              )}
+          <div className="card shadow">
+            <div className="card-body">
+              <table className="table table-bordered text-center">
+                <thead className="table-dark">
+                  <tr>
+                    <th>Student</th>
+                    <th>Exam</th>
+                    <th>Marks</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {paginatedResults.map((r) => (
+                    <tr key={r.resultId}>
+                      <td>{r.studentName}</td>
+                      <td>{r.examName}</td>
+                      <td>
+                        {r.obtainedMarks}/{r.totalMarks}
+                      </td>
+                      <td>
+                        <button
+                          className="btn btn-sm btn-info me-2"
+                          onClick={() => exportStudentPDF(r)}
+                        >
+                          PDF
+                        </button>
+                        <button
+                          className="btn btn-sm btn-warning me-2"
+                          onClick={() => handleEdit(r)}
+                        >
+                          Edit
+                        </button>
+                        <button
+                          className="btn btn-sm btn-danger"
+                          onClick={() => handleDelete(r.resultId)}
+                        >
+                          Delete
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+
+              <div className="d-flex justify-content-center mt-3">
+                {[...Array(totalPages)].map((_, index) => (
+                  <button
+                    key={index}
+                    className={`btn btn-sm mx-1 ${
+                      currentPage === index + 1
+                        ? "btn-primary"
+                        : "btn-outline-primary"
+                    }`}
+                    onClick={() => setCurrentPage(index + 1)}
+                  >
+                    {index + 1}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
         </>
       )}
 
+      {/* ================= FORM ================= */}
       {(pageMode === "create" || pageMode === "edit") && (
-        <div className="card shadow-sm p-4">
+        <div className="card shadow p-4">
           <h4>{pageMode === "edit" ? "Edit Result" : "Add Result"}</h4>
 
+          {/* Course */}
           <select
             className="form-select mb-2"
             value={form.courseId}
-            onChange={(e) =>
-              handleCourseChange(e.target.value)
-            }
+            onChange={(e) => handleCourseChange(e.target.value)}
           >
             <option value="">Select Course</option>
             {courses.map((c) => (
-              <option key={c.course_Id} value={c.course_Id}>
+              <option key={c.course_Id} value={String(c.course_Id)}>
                 {c.course_Name}
               </option>
             ))}
           </select>
 
+          {/* Semester */}
           <select
             className="form-select mb-2"
             value={form.semId}
-            onChange={(e) =>
-              handleSemesterChange(e.target.value)
-            }
-            disabled={!form.courseId}
+            onChange={(e) => handleSemesterChange(e.target.value)}
           >
             <option value="">Select Semester</option>
             {semesters.map((s) => (
-              <option key={s.sem_Id} value={s.sem_Id}>
+              <option key={s.sem_Id} value={String(s.sem_Id)}>
                 {s.sem_Name}
               </option>
             ))}
           </select>
 
+          {/* Exam */}
           <select
             className="form-select mb-2"
             value={form.examId}
-            onChange={(e) =>
-              handleExamChange(e.target.value)
-            }
-            disabled={!form.semId}
+            onChange={(e) => handleExamChange(e.target.value)}
           >
             <option value="">Select Exam</option>
             {exams.map((ex) => (
-              <option key={ex.exam_Id} value={ex.exam_Id}>
+              <option key={ex.exam_Id} value={String(ex.exam_Id)}>
                 {ex.exam_Name}
               </option>
             ))}
           </select>
 
+          {/* Student */}
           <select
             className="form-select mb-2"
             value={form.studentId}
@@ -344,12 +470,15 @@ console.log("Filtered:", filteredStudents);
           >
             <option value="">Select Student</option>
             {students.map((st) => (
-              <option key={st.student_Id} value={st.student_Id}>
-               {st.stu_FirstName + " " + (st.stu_LastName ?? "")}
+              <option key={st.student_Id} value={String(st.student_Id)}>
+                {st.stu_FirstName +
+                  " " +
+                  (st.stu_LastName ?? "")}
               </option>
             ))}
           </select>
 
+          {/* Subject */}
           <select
             className="form-select mb-2"
             value={form.subjectId}
@@ -359,7 +488,7 @@ console.log("Filtered:", filteredStudents);
           >
             <option value="">Select Subject</option>
             {subjects.map((sub) => (
-              <option key={sub.subject_Id} value={sub.subject_Id}>
+              <option key={sub.sub_Id} value={String(sub.sub_Id)}>
                 {sub.subject_Name}
               </option>
             ))}
@@ -380,32 +509,31 @@ console.log("Filtered:", filteredStudents);
 
           <input
             type="number"
-            className="form-control mb-2"
+            className="form-control mb-3"
             value={form.totalMarks}
             disabled
           />
-
-          <div className="alert alert-info">
-            Percentage: {percentage}% | Grade: {grade}
-          </div>
 
           <div className="d-flex gap-2">
             <button
               className="btn btn-secondary"
               onClick={() => {
-                setForm(initialFormState);
+                resetForm();
                 setPageMode("list");
               }}
             >
               Cancel
             </button>
-
-            <button
-              className="btn btn-primary"
-              onClick={handleSave}
-            >
-              Save
+            <button className="btn btn-primary" onClick={handleSave}>
+              {pageMode === "edit" ? "Update" : "Save"}
             </button>
+            <button
+  type="button"
+  className="btn btn-outline-primary mb-3"
+  onClick={getLocation}
+>
+  📍 Capture Location
+</button>
           </div>
         </div>
       )}
