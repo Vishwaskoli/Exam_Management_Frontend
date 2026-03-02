@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import "bootstrap/dist/css/bootstrap.min.css";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 const API_BASE_URL = "https://localhost:7248/api/ExamMaster";
 const API_SUBJECT_MAPPING = "https://localhost:7248/api/SubjectSemMapping";
@@ -17,7 +19,7 @@ const ExamMaster = () => {
     const [allSemesters, setAllSemesters] = useState([]);
     const [allSubjects, setAllSubjects] = useState([]);
     const [courses, setCourses] = useState([]);
-
+    const [isEditMode, setIsEditMode] = useState(false);
     const [mappedSubjects, setMappedSubjects] = useState([]);
     const [allMappings, setAllMappings] = useState([]); // all course-sem-subject mappings
 
@@ -135,15 +137,30 @@ const ExamMaster = () => {
     // }, [form.Course_Id, allMappings]);
     // to here
 
+    //commented from here
+    // useEffect(() => {
+    //     setForm((prev) => ({
+    //         ...prev,
+    //         Sem_Id: "",
+    //         SubjectRows: prev.SubjectRows.map((r) => ({
+    //             ...r,
+    //             Subject_Id: "",
+    //         })),
+    //     }));
+    // }, [form.Course_Id]);
+    // to here
+
     useEffect(() => {
-        setForm((prev) => ({
-            ...prev,
-            Sem_Id: "",
-            SubjectRows: prev.SubjectRows.map((r) => ({
-                ...r,
-                Subject_Id: "",
-            })),
-        }));
+        if (!isEditMode) {
+            setForm((prev) => ({
+                ...prev,
+                Sem_Id: "",
+                SubjectRows: prev.SubjectRows.map((r) => ({
+                    ...r,
+                    Subject_Id: "",
+                })),
+            }));
+        }
     }, [form.Course_Id]);
 
     useEffect(() => {
@@ -157,13 +174,17 @@ const ExamMaster = () => {
 
             setMappedSubjects(filtered);
 
-            setForm((prev) => ({
-                ...prev,
-                SubjectRows: prev.SubjectRows.map((r) => ({
-                    ...r,
-                    Subject_Id: "",
-                })),
-            }));
+            //added this 
+            if (!isEditMode) {
+                //
+                setForm((prev) => ({
+                    ...prev,
+                    SubjectRows: prev.SubjectRows.map((r) => ({
+                        ...r,
+                        Subject_Id: "",
+                    })),
+                }));
+            }
         } else {
             setMappedSubjects([]);
         }
@@ -223,6 +244,7 @@ const ExamMaster = () => {
     };
 
     const handleAdd = () => {
+        setIsEditMode(false);
         setForm({
             Exam_Id: null,
             Exam_Name: "",
@@ -235,39 +257,104 @@ const ExamMaster = () => {
         setView("add");
     };
 
-    const handleEdit = (exam) => {
+    const convertToDateInputFormat = (dateString) => {
+        const date = new Date(dateString);
+        return date.toISOString().split("T")[0];
+    };
+
+    const handleView = (exam) => {
+
+        setIsEditMode(false);
+
         const subjectIds = exam.subjectIds ? exam.subjectIds.split(",") : [];
         const examDates = exam.examDates ? exam.examDates.split(",") : [];
         const totalMarks = exam.totalMarks ? exam.totalMarks.split(",") : [];
 
-        const subjectRows = subjectIds.map((subId, idx) => ({
-            Subject_Id: subId,
-            Exam_Date: examDates[idx] || "",
-            Total_Marks: totalMarks[idx] || "",
+        const subjectRows = subjectIds.map((subId, index) => ({
+            Subject_Id: String(subId),
+            Exam_Date: examDates[index] || "",
+            Total_Marks: totalMarks[index] || "",
         }));
 
         const filteredMappedSubjects = allMappings.filter(
-            (m) => m.course_Id === parseInt(exam.course_Id) && m.sem_Id === parseInt(exam.sem_Id)
+            (m) =>
+                m.course_Id === parseInt(exam.course_Id) &&
+                m.sem_Id === parseInt(exam.sem_Id)
         );
+
         setMappedSubjects(filteredMappedSubjects);
 
         setForm({
             Exam_Id: exam.exam_Id,
             Exam_Name: exam.exam_Name,
-            Course_Id: exam.course_Id,
-            Sem_Id: exam.sem_Id,
+            Course_Id: String(exam.course_Id),
+            Sem_Id: String(exam.sem_Id),
+            Created_By: exam.created_By,
+            Modified_By: exam.modified_By,
+            SubjectRows:
+                subjectRows.length > 0
+                    ? subjectRows
+                    : [{ Subject_Id: "", Exam_Date: "", Total_Marks: "" }],
+        });
+
+        setView("view"); // 👈 IMPORTANT
+    };
+
+    const handleEdit = (exam) => {
+
+        setIsEditMode(true);
+
+        // Split aggregated values
+        const subjectIds = exam.subjectIds ? exam.subjectIds.split(",") : [];
+        const examDates = exam.examDates ? exam.examDates.split(",") : [];
+        const totalMarks = exam.totalMarks ? exam.totalMarks.split(",") : [];
+
+        // Build subject rows
+        const subjectRows = subjectIds.map((subId, index) => ({
+            Subject_Id: String(subId),
+            Exam_Date: examDates[index] || "",
+            Total_Marks: totalMarks[index] || "",
+        }));
+
+        // Filter dropdown subjects
+        const filteredMappedSubjects = allMappings.filter(
+            (m) =>
+                m.course_Id === parseInt(exam.course_Id) &&
+                m.sem_Id === parseInt(exam.sem_Id)
+        );
+
+        setMappedSubjects(filteredMappedSubjects);
+
+        setForm({
+            Exam_Id: exam.exam_Id,
+            Exam_Name: exam.exam_Name,
+            Course_Id: String(exam.course_Id),
+            Sem_Id: String(exam.sem_Id),
             Created_By: exam.created_By,
             Modified_By: "",
-            SubjectRows: subjectRows.length
-                ? subjectRows
-                : [{ Subject_Id: "", Exam_Date: "", Total_Marks: "" }],
+            SubjectRows:
+                subjectRows.length > 0
+                    ? subjectRows
+                    : [{ Subject_Id: "", Exam_Date: "", Total_Marks: "" }],
         });
+
         setView("edit");
     };
 
     const handleSave = async () => {
-        if (!form.Exam_Name || !form.Course_Id || !form.Sem_Id || !form.Created_By) {
-            alert("Exam Name, Course, Semester, and Created By are required");
+
+        if (!form.Exam_Name || !form.Course_Id || !form.Sem_Id) {
+            alert("Exam Name, Course and Semester are required");
+            return;
+        }
+
+        if (view === "add" && !form.Created_By) {
+            alert("Created By is required");
+            return;
+        }
+
+        if (view === "edit" && !form.Modified_By) {
+            alert("Modified By is required");
             return;
         }
 
@@ -278,37 +365,131 @@ const ExamMaster = () => {
             }
         }
 
-        const subjectIds = form.SubjectRows.map((r) => r.Subject_Id);
-        const duplicates = subjectIds.filter((item, index) => subjectIds.indexOf(item) !== index);
-
-        if (duplicates.length > 0) {
-            alert("Duplicate subjects are not allowed. Please select unique subjects.");
-            return;
-        }
-
-        const payload = {
-            Mode: view === "edit" ? "Update" : "Add",
-            Exam_Id: form.Exam_Id,
-            Exam_Name: form.Exam_Name,
-            Course_Id: parseInt(form.Course_Id),
-            Sem_Id: parseInt(form.Sem_Id),
-            SubjectIds: form.SubjectRows.map((r) => r.Subject_Id).join(","),
-            ExamDates: form.SubjectRows.map((r) => r.Exam_Date).join(","),
-            TotalMarks: form.SubjectRows.map((r) => r.Total_Marks).join(","),
-            Created_By: form.Created_By ? parseInt(form.Created_By) : null,
-            Modified_By: form.Modified_By ? parseInt(form.Modified_By) : null,
-        };
-
         try {
+
+            // 🔥 Convert rows into comma separated values
+            const subjectIds = form.SubjectRows.map(r => r.Subject_Id).join(",");
+            const examDates = form.SubjectRows.map(r => r.Exam_Date).join(",");
+            const totalMarks = form.SubjectRows.map(r => r.Total_Marks).join(",");
+
+            const payload = {
+                mode: view === "edit" ? "Update" : "Add",
+                exam_Id: form.Exam_Id,
+                exam_Name: form.Exam_Name,
+                course_Id: parseInt(form.Course_Id),
+                sem_Id: parseInt(form.Sem_Id),
+                subjectIds: subjectIds,
+                examDates: examDates,
+                totalMarks: totalMarks,
+                created_By: view === "add" ? parseInt(form.Created_By) : null,
+                modified_By: view === "edit" ? parseInt(form.Modified_By) : null
+            };
+
             await axios.post(API_BASE_URL, payload);
+
             fetchExams();
             setView("list");
-            alert("Exam saved successfully!");
+
+            alert(view === "edit"
+                ? "Exam updated successfully!"
+                : "Exam saved successfully!"
+            );
+
         } catch (err) {
             console.error("Error saving exam", err);
-            alert("Error saving exam. Check console.");
+            alert("Error saving exam.");
         }
     };
+
+    // const handleSave = async () => {
+
+    //     // ✅ Basic Validation
+    //     if (!form.Exam_Name || !form.Course_Id || !form.Sem_Id) {
+    //         alert("Exam Name, Course and Semester are required");
+    //         return;
+    //     }
+
+    //     if (view === "add" && !form.Created_By) {
+    //         alert("Created By is required");
+    //         return;
+    //     }
+
+    //     if (view === "edit" && !form.Modified_By) {
+    //         alert("Modified By is required");
+    //         return;
+    //     }
+
+    //     // ✅ Subject Row Validation
+    //     for (let row of form.SubjectRows) {
+    //         if (!row.Subject_Id || !row.Exam_Date || !row.Total_Marks) {
+    //             alert("All Subject rows must be filled");
+    //             return;
+    //         }
+    //     }
+
+    //     // ✅ Duplicate Subject Check
+    //     const subjectIds = form.SubjectRows.map((r) => r.Subject_Id);
+    //     const duplicates = subjectIds.filter(
+    //         (item, index) => subjectIds.indexOf(item) !== index
+    //     );
+
+    //     if (duplicates.length > 0) {
+    //         alert("Duplicate subjects are not allowed.");
+    //         return;
+    //     }
+
+    //     try {
+
+    //         // 🔥 1️⃣ IF EDIT → Delete all old rows first
+    //         if (view === "edit") {
+
+    //             const relatedRows = exams.filter(
+    //                 (e) =>
+    //                     e.exam_Name === form.Exam_Name &&
+    //                     e.course_Id === form.Course_Id &&
+    //                     e.sem_Id === form.Sem_Id
+    //             );
+
+    //             for (let row of relatedRows) {
+    //                 await axios.post(API_BASE_URL,payload, {
+    //                     Exam_Id: row.exam_Id,
+    //                     Modified_By: parseInt(form.Modified_By),
+    //                 });
+    //             }
+    //         }
+
+    //         // 🔥 2️⃣ Insert rows one by one
+    //         for (let row of form.SubjectRows) {
+
+    //             const payload = {
+    //                 Mode: "Add",
+    //                 Exam_Id: 0,
+    //                 Exam_Name: form.Exam_Name,
+    //                 Course_Id: parseInt(form.Course_Id),
+    //                 Sem_Id: parseInt(form.Sem_Id),
+    //                 SubjectIds: row.Subject_Id,
+    //                 ExamDates: row.Exam_Date,
+    //                 TotalMarks: row.Total_Marks,
+    //                 Created_By: view === "add"
+    //                     ? parseInt(form.Created_By)
+    //                     : parseInt(form.Modified_By),
+    //             };
+
+    //             await axios.post(API_BASE_URL, payload);
+    //         }
+
+    //         fetchExams();
+    //         setView("list");
+    //         alert(view === "edit"
+    //             ? "Exam updated successfully!"
+    //             : "Exam saved successfully!"
+    //         );
+
+    //     } catch (err) {
+    //         console.error("Error saving exam", err);
+    //         alert("Error saving exam.");
+    //     }
+    // };
 
     const handleDelete = async (examId) => {
         const modifiedBy = prompt("Enter your User ID for deletion:");
@@ -324,6 +505,34 @@ const ExamMaster = () => {
             console.error("Error deleting exam", err);
             alert("Error deleting exam. See console.");
         }
+    };
+
+    const handleExportPDF = () => {
+        const doc = new jsPDF();
+
+        doc.setFontSize(16);
+        doc.text("Exam Details", 14, 15);
+
+        doc.setFontSize(12);
+        doc.text(`Exam Name: ${form.Exam_Name}`, 14, 30);
+        doc.text(`Course: ${courseMap[Number(form.Course_Id)]}`, 14, 38);
+        doc.text(`Semester: ${semesterMap[Number(form.Sem_Id)]}`, 14, 46);
+
+        // Prepare table data
+        const tableData = form.SubjectRows.map((row, index) => [
+            index + 1,
+            subjectMap[Number(row.Subject_Id)] || "",
+            row.Exam_Date,
+            row.Total_Marks
+        ]);
+
+        autoTable(doc, {
+            startY: 55,
+            head: [["#", "Subject", "Exam Date", "Total Marks"]],
+            body: tableData,
+        });
+
+        doc.save(`${form.Exam_Name}_Exam.pdf`);
     };
 
     // ---------------- RENDER ----------------
@@ -346,6 +555,19 @@ const ExamMaster = () => {
 
     // console.log("semesterMap:", semesterMap);
 
+    // const filteredSemesters =
+    // view === "edit"
+    //     ? allSemesters
+    //     : form.Course_Id
+    //         ? allSemesters.filter((sem) =>
+    //             allMappings.some(
+    //                 (m) =>
+    //                     m.course_Id === parseInt(form.Course_Id) &&
+    //                     m.sem_Id === sem.sem_Id
+    //             )
+    //         )
+    //         : [];
+
     const filteredSemesters =
         form.Course_Id
             ? allSemesters.filter((sem) =>
@@ -362,7 +584,7 @@ const ExamMaster = () => {
     );
 
     return (
-        <div className="container mt-4">
+        <div className="container mt-4" style={{ paddingTop: "100px" }}>
             {/* LIST VIEW */}
             {view === "list" && (
                 <>
@@ -373,6 +595,7 @@ const ExamMaster = () => {
                                 type="text"
                                 className="form-control"
                                 placeholder="Search exam..."
+                                style={{ width: "250px" }}
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
                             />
@@ -387,11 +610,11 @@ const ExamMaster = () => {
                             <table className="table table-hover">
                                 <thead className="table-light">
                                     <tr>
-                                        <th>#</th>
+                                        <th>Serial Number</th>
                                         <th>Exam Name</th>
                                         <th>Course</th>
                                         <th>Semester</th>
-                                        <th>Action</th>
+                                        <th style={{ width: "80px" }}>Action</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -403,21 +626,52 @@ const ExamMaster = () => {
                                                 <td>{courseMap[Number(exam.course_Id)] || "N/A"}</td>
                                                 <td>{semesterMap[Number(exam.sem_Id)] || "N/A"}</td>
                                                 <td>
-                                                    <div className="btn-group">
-                                                        <button className="btn btn-sm btn-primary" onClick={() => handleEdit(exam)}>
-                                                            Edit
+                                                    <div className="dropdown">
+                                                        <button
+                                                            className="btn btn-sm btn-primary"
+                                                            type="button"
+                                                            data-bs-toggle="dropdown"
+                                                            aria-expanded="false"
+                                                        >
+                                                            ⋮
                                                         </button>
-                                                        <button className="btn btn-sm btn-danger" onClick={() => handleDelete(exam.exam_Id)}>
-                                                            Delete
-                                                        </button>
+
+                                                        <ul className="dropdown-menu">
+                                                            <li>
+                                                                <button
+                                                                    className="dropdown-item"
+                                                                    onClick={() => handleView(exam)}
+                                                                >
+                                                                    View
+                                                                </button>
+                                                            </li>
+                                                            <li>
+                                                                <button
+                                                                    className="dropdown-item"
+                                                                    onClick={() => handleEdit(exam)}
+                                                                >
+                                                                    Edit
+                                                                </button>
+                                                            </li>
+
+                                                            <li>
+                                                                <button
+                                                                    className="dropdown-item text-danger"
+                                                                    onClick={() => handleDelete(exam.exam_Id)}
+                                                                >
+                                                                    Delete
+                                                                </button>
+                                                            </li>
+                                                        </ul>
                                                     </div>
                                                 </td>
+
                                             </tr>
                                         ))
                                     ) : (
                                         <tr>
-                                            <td colSpan="8" className="text-center">
-                                                No records found
+                                            <td colSpan="3" className="text-center">
+                                                No Records Found
                                             </td>
                                         </tr>
                                     )}
@@ -450,10 +704,10 @@ const ExamMaster = () => {
                 </>
             )}
 
-            {/* ADD / EDIT VIEW */}
-            {(view === "add" || view === "edit") && (
+            {/* ADD / EDIT / VIEW/ VIEW */}
+            {(view === "add" || view === "edit" || view === "view") && (
                 <div className="card shadow-sm p-4 mt-3">
-                    <h4>{view === "edit" ? "Edit Exam" : "Add Exam"}</h4>
+                    <h4>{view === "edit" ? "Edit Exam" : view === "view" ? "View Exam" : "Add Exam"}</h4>
 
                     <div className="mb-3">
                         <label>Exam Name</label>
@@ -463,12 +717,13 @@ const ExamMaster = () => {
                             name="Exam_Name"
                             value={form.Exam_Name}
                             onChange={handleInputChange}
+                            disabled={view === "view"}
                         />
                     </div>
 
                     <div className="mb-3">
                         <label>Course</label>
-                        <select className="form-select" name="Course_Id" value={form.Course_Id} onChange={handleInputChange}>
+                        <select className="form-select" name="Course_Id" value={form.Course_Id} onChange={handleInputChange} disabled={view === "view"}>
                             <option value="">Select Course</option>
                             {courses.map((c) => (
                                 <option key={c.course_Id} value={c.course_Id}>
@@ -480,7 +735,7 @@ const ExamMaster = () => {
 
                     <div className="mb-3">
                         <label>Semester</label>
-                        <select className="form-select" name="Sem_Id" value={form.Sem_Id} onChange={handleInputChange}>
+                        <select className="form-select" name="Sem_Id" value={form.Sem_Id} onChange={handleInputChange} disabled={view === "view"}>
                             <option value="">Select Semester</option>
                             {filteredSemesters.map((s) => (
                                 <option key={s.sem_Id} value={s.sem_Id}>
@@ -498,6 +753,7 @@ const ExamMaster = () => {
                             name={view === "edit" ? "Modified_By" : "Created_By"}
                             value={view === "edit" ? form.Modified_By : form.Created_By}
                             onChange={handleInputChange}
+                            disabled={view === "view"}
                         />
                     </div>
 
@@ -510,6 +766,7 @@ const ExamMaster = () => {
                                 name="Subject_Id"
                                 value={row.Subject_Id}
                                 onChange={(e) => handleFormChange(e, idx)}
+                                disabled={view === "view"}
                             >
                                 <option value="">Select Subject</option>
 
@@ -520,27 +777,45 @@ const ExamMaster = () => {
                                 ))}
                             </select>
 
-                            <input type="date" className="form-control" name="Exam_Date" value={row.Exam_Date} onChange={(e) => handleFormChange(e, idx)} />
-                            <input type="number" className="form-control" placeholder="Marks" name="Total_Marks" value={row.Total_Marks} onChange={(e) => handleFormChange(e, idx)} />
+                            <input type="date" className="form-control" name="Exam_Date" value={row.Exam_Date} onChange={(e) => handleFormChange(e, idx)} disabled={view === "view"} />
+                            <input type="number" className="form-control" placeholder="Marks" name="Total_Marks" value={row.Total_Marks} onChange={(e) => handleFormChange(e, idx)} disabled={view === "view"} />
 
-                            <button className="btn btn-danger" onClick={() => removeRow(idx)}>
+                            <button className="btn btn-danger" onClick={() => removeRow(idx)} disabled={view === "view"}>
                                 Delete
                             </button>
                         </div>
                     ))}
 
-                    <button className="btn btn-secondary mb-3" onClick={addRow}>
+                    <button className="btn btn-secondary mb-3" onClick={addRow} disabled={view === "view"}>
                         + Add Row
                     </button>
 
                     <div className="d-flex gap-2">
                         <button className="btn btn-secondary" onClick={() => setView("list")}>
+                            Back
+                        </button>
+
+                        {view === "view" && (
+                            <button className="btn btn-success" onClick={handleExportPDF}>
+                                Export to PDF
+                            </button>
+                        )}
+
+                        {view !== "view" && (
+                            <button className="btn btn-primary" onClick={handleSave}>
+                                {view === "edit" ? "Update" : "Save"}
+                            </button>
+                        )}
+                    </div>
+
+                    {/* <div className="d-flex gap-2">
+                        <button className="btn btn-secondary" onClick={() => setView("list")}>
                             Cancel
                         </button>
-                        <button className="btn btn-primary" onClick={handleSave}>
+                        <button className="btn btn-primary" onClick={handleSave} disabled={view === "view"}>
                             {view === "edit" ? "Update" : "Save"}
                         </button>
-                    </div>
+                    </div> */}
                 </div>
             )}
         </div>
