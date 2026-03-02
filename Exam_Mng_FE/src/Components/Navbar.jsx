@@ -20,7 +20,7 @@ const Navbar = () => {
 
         {/* Project Name */}
         <h1 className="text-lg font-semibold tracking-wide">
-          Master Management System
+          Exam Management System
         </h1>
 
         <div></div>

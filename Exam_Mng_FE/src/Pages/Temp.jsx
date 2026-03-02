@@ -1,5 +1,7 @@
 // import React, { useEffect, useState } from "react";
 
+import { useEffect, useState } from "react";
+
 // const Temp = () => {
 //   const [courses, setCourses] = useState([]);
 //   const [loading, setLoading] = useState(true);
@@ -32,6 +34,7 @@
 //       setLoading(false);
 //     }
 //   };
+
 
 //   useEffect(() => {
 //     fetchCourses();
@@ -348,3 +351,55 @@
 // };
 
 // export default Temp;
+
+export default function Temp() {
+    const [location, setLocation] = useState({ latitude: null, longitude: null });
+    const [locationEnabled, setLocationEnabled] = useState(false);
+    const [errorMessage, setErrorMessage] = useState(""); // Added this
+
+    const getCurrentLocation = () => {
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    setLocation({
+                        latitude: position.coords.latitude,
+                        longitude: position.coords.longitude,
+                    });
+                    setLocationEnabled(true);
+                },
+                (error) => {
+                    setErrorMessage("Enable location services.");
+                    setLocationEnabled(false);
+                }
+            );
+        }
+    };
+
+    // Trigger ONLY once on mount
+    useEffect(() => {
+        getCurrentLocation();
+    }, []);
+
+    // Log ONLY when location updates
+    // useEffect(() => {
+    //     if(location.latitude) {
+    //         console.log("Updated Coordinates:", location);
+    //     }
+    // }, [location]);
+
+    console.log(location.latitude,location.longitude);
+
+    return (
+        <div className="container">
+            {locationEnabled ? (
+                <div className="alert alert-success">
+                    Location: {location.latitude}, {location.longitude}
+                </div>
+            ) : (
+                <div className="alert alert-warning">
+                    {errorMessage || "Fetching location..."}
+                </div>
+            )}
+        </div>
+    );
+}

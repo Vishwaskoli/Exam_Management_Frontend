@@ -112,6 +112,17 @@ const Subject_Sem_Mapping = () => {
       return;
     }
 
+     if (viewMode === "add") {
+    const semesterExists = mappings.some(
+      (m) => m.sem_Id === parseInt(selectedSem)
+    );
+
+    if (semesterExists) {
+      alert("Mapping for this Semester already exists!");
+      return;
+    }
+  }
+
     try {
       // If editing → delete old mappings first
       if (viewMode === "edit") {
@@ -180,6 +191,9 @@ const handleAdd = () => {
   const uniqueSemesters = [
     ...new Map(mappings.map((m) => [m.sem_Id, m])).values(),
   ];
+
+  console.log("Unique Semesters:", uniqueSemesters);
+
 
   const filteredSemesters = uniqueSemesters.filter((map) => {
   const semName = getSemesterName(map.sem_Id);

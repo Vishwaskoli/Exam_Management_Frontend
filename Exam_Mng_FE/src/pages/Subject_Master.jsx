@@ -10,7 +10,12 @@ const Subject_Master = () => {
   const [subjectName, setSubjectName] = useState("");
   const [userId, setUserId] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
-  const [activeAction, setActiveAction] = useState(null); // track which row's menu is open
+  //const [activeAction, setActiveAction] = useState(null); // track which row's menu is open
+  const [latitude, setLatitude] = useState("");
+  const [longitude, setLongitude] = useState("");
+  const [locationEnabled, setLocationEnabled] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10); // subjects per page
 
   // =============================
   // FETCH SUBJECTS
@@ -35,6 +40,44 @@ const Subject_Master = () => {
     sub.subject_Name?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+
+  // =============================
+  // Pagenation Logic
+  // =============================
+  const indexOfLast = currentPage * itemsPerPage;
+  const indexOfFirst = indexOfLast - itemsPerPage;
+  const currentSubjects = filteredSubjects.slice(indexOfFirst, indexOfLast);
+
+  const totalPages = Math.ceil(filteredSubjects.length / itemsPerPage);
+
+
+  // =============================
+  // GeoLoaction 
+  // =============================
+  const getCurrentLocation = () => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setLatitude(position.coords.latitude);
+          setLongitude(position.coords.longitude);
+          setLocationEnabled(true);
+        },
+        (error) => {
+          alert("Location permission is required to add or edit a subject.");
+          console.error(error);
+          setLatitude("");
+          setLongitude("");
+          setLocationEnabled(false);
+        }
+      );
+    } else {
+      alert("Geolocation is not supported by your browser.");
+      setLocationEnabled(false);
+    }
+  };
+
+
+
   // =============================
   // OPEN ADD MODAL
   // =============================
@@ -53,6 +96,8 @@ const Subject_Master = () => {
     setSubjectName(subject.subject_Name);
     setUserId("");
     setViewMode("edit");
+    setLatitude(subject.latitude || "");
+    setLongitude(subject.longitude || "");
   };
 
   // =============================
@@ -69,25 +114,56 @@ const Subject_Master = () => {
       return;
     }
 
-    try {
-      if (editingSubject === null) {
-        await axios.post(`${API_BASE_URL}/Create`, {
-          Subject_Name: subjectName,
-          Created_By: parseInt(userId),
-        });
-      } else {
-        await axios.post(`${API_BASE_URL}/Update`, {
-          Subject_Id: editingSubject.subject_Id,
-          Subject_Name: subjectName,
-          Modified_By: parseInt(userId),
-        });
+    const duplicate = subjects.some(
+      (sub) =>
+        sub.subject_Name.toLowerCase() === subjectName.trim().toLowerCase() &&
+        (editingSubject === null || sub.subject_Id !== editingSubject.subject_Id)
+    );
+
+    if (duplicate) {
+      alert("Subject Name already exists");
+      return;
+    }
+
+    // Get location before saving
+    getCurrentLocation();
+
+    setTimeout(async () => {
+      if (!locationEnabled || !latitude || !longitude) {
+        alert("Cannot save without location. Please allow location access.");
+        return;
       }
 
-      setViewMode("list");
-      fetchSubjects();
-    } catch (err) {
-      console.error("Error saving subject", err);
-    }
+      try {
+        if (editingSubject === null) {
+          await axios.post(`${API_BASE_URL}/Create`, {
+            Subject_Name: subjectName,
+            Latitude: parseFloat(latitude),
+            Longitude: parseFloat(longitude),
+            Created_By: parseInt(userId),
+          });
+        } else {
+          await axios.post(`${API_BASE_URL}/Update`, {
+            Subject_Id: editingSubject.subject_Id,
+            Subject_Name: subjectName,
+            Latitude: parseFloat(latitude),
+            Longitude: parseFloat(longitude),
+            Modified_By: parseInt(userId),
+          });
+        }
+
+        setViewMode("list");
+        fetchSubjects();
+
+        // Reset location
+        setLatitude("");
+        setLongitude("");
+        setLocationEnabled(false);
+      } catch (err) {
+        console.error("Error saving subject:", err);
+        alert("Error saving subject. See console for details.");
+      }
+    }, 800);
   };
 
   // =============================
@@ -144,8 +220,8 @@ const Subject_Master = () => {
                 </thead>
 
                 <tbody>
-                  {filteredSubjects.length > 0 ? (
-                    filteredSubjects.map((sub, index) => (
+                  {currentSubjects.length > 0 ? (
+                    currentSubjects.map((sub, index) => (
                       <tr key={sub.subject_Id}>
                         <td>{index + 1}</td>
                         <td>{sub.subject_Name}</td>
@@ -193,6 +269,29 @@ const Subject_Master = () => {
                   )}
                 </tbody>
               </table>
+
+              {/* Pagination */}
+              <div className="d-flex justify-content-between align-items-center mt-2">
+                <div>
+                  Page {currentPage} of {totalPages}
+                </div>
+                <div>
+                  <button
+                    className="btn btn-sm btn-outline-primary me-1"
+                    onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                    disabled={currentPage === 1}
+                  >
+                    Prev
+                  </button>
+                  <button
+                    className="btn btn-sm btn-outline-primary"
+                    onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                    disabled={currentPage === totalPages || totalPages === 0}
+                  >
+                    Next
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </>

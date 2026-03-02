@@ -1,23 +1,11 @@
 import axios from "axios";
 
-const API = "https://localhost:7248/api/SemesterMaster"; // change port
+const API = "https://localhost:7248/api/ResultMaster";
 
-export const getResults = async () => {
-    return await axios.get(API);
-};
+export const getResults = () => axios.get(`${API}/All`);
 
-export const getResultById = async (id) => {
-    return await axios.get(`${API}/${id}`);
-};
+export const saveResult = (data) =>
+  axios.post(`${API}/Save`, data);
 
-export const createResult = async (data) => {
-    return await axios.post(API, data);
-};
-
-export const updateResult = async (data) => {
-    return await axios.put(API, data);
-};
-
-export const deleteResult = async (id) => {
-    return await axios.delete(`${API}/${id}`);
-};
+export const deleteResult = (data) =>
+  axios.post(`${API}/Delete`, data);
