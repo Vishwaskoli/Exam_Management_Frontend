@@ -30,7 +30,9 @@ const ExamMaster = () => {
         Sem_Id: "",
         Created_By: "",
         Modified_By: "",
-        SubjectRows: [{ Subject_Id: "", Exam_Date: "", Total_Marks: "" }],
+        Latitude: "",
+        Longitude: "",
+        SubjectRows: [{ Subject_Id: "", Exam_Date: "", ExamStartTimes: "", Durations: "", ExamEndTime: "", Total_Marks: "" }],
     });
 
     // ---------------- FETCH DATA ----------------
@@ -190,6 +192,29 @@ const ExamMaster = () => {
         }
     }, [form.Course_Id, form.Sem_Id, allMappings]);
 
+    // useEffect(() => {
+    //     if (form.ExamStartTime && form.Duration) {
+    //         const [hours, minutes] =
+    //             form.ExamStartTime.split(":").map(Number);
+
+    //         const totalMinutes =
+    //             hours * 60 + minutes + parseInt(form.Duration);
+
+    //         const endHours = Math.floor(totalMinutes / 60) % 24;
+    //         const endMinutes = totalMinutes % 60;
+
+    //         const formatted =
+    //             String(endHours).padStart(2, "0") +
+    //             ":" +
+    //             String(endMinutes).padStart(2, "0");
+
+    //         setForm(prev => ({
+    //             ...prev,
+    //             ExamEndTime: formatted
+    //         }));
+    //     }
+    // }, [form.ExamStartTime, form.Duration]);
+
 
     // Update subjects when course or semester changes
     //commented from here
@@ -214,6 +239,10 @@ const ExamMaster = () => {
     // to here
 
 
+    const examStartTimes = form.SubjectRows.map(r => r.ExamStartTimes).join(",");
+    const durations = form.SubjectRows.map(r => r.Durations).join(",");
+    const examEndTimes = form.SubjectRows.map(r => r.ExamEndTime).join(",");
+
     // ---------------- FORM HANDLERS ----------------
     const handleInputChange = (e) => {
         const { name, value } = e.target;
@@ -222,9 +251,27 @@ const ExamMaster = () => {
 
     const handleFormChange = (e, idx) => {
         const { name, value } = e.target;
-        setForm((prev) => {
+
+        setForm(prev => {
             const newRows = [...prev.SubjectRows];
             newRows[idx][name] = value;
+
+            const start = newRows[idx].ExamStartTimes;
+            const duration = newRows[idx].Durations;
+
+            if (start && duration) {
+                const [h, m] = start.split(":").map(Number);
+                const totalMinutes = h * 60 + m + parseInt(duration);
+
+                const endH = Math.floor(totalMinutes / 60) % 24;
+                const endM = totalMinutes % 60;
+
+                newRows[idx].ExamEndTime =
+                    String(endH).padStart(2, "0") +
+                    ":" +
+                    String(endM).padStart(2, "0");
+            }
+
             return { ...prev, SubjectRows: newRows };
         });
     };
@@ -232,7 +279,7 @@ const ExamMaster = () => {
     const addRow = () => {
         setForm((prev) => ({
             ...prev,
-            SubjectRows: [...prev.SubjectRows, { Subject_Id: "", Exam_Date: "", Total_Marks: "" }],
+            SubjectRows: [...prev.SubjectRows, { Subject_Id: "", Exam_Date: "", ExamStartTimes: "", Durations: "", ExamEndTime: "", Total_Marks: "" }],
         }));
     };
 
@@ -245,21 +292,44 @@ const ExamMaster = () => {
 
     const handleAdd = () => {
         setIsEditMode(false);
-        setForm({
-            Exam_Id: null,
-            Exam_Name: "",
-            Course_Id: "",
-            Sem_Id: "",
-            Created_By: "",
-            Modified_By: "",
-            SubjectRows: [{ Subject_Id: "", Exam_Date: "", Total_Marks: "" }],
-        });
-        setView("add");
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                setForm({
+                    Exam_Id: null,
+                    Exam_Name: "",
+                    Course_Id: "",
+                    Sem_Id: "",
+                    Created_By: "",
+                    Modified_By: "",
+                    Latitude: "",
+                    Longitude: "",
+                    SubjectRows: [{ Subject_Id: "", Exam_Date: "", ExamStartTimes: "", Durations: "", ExamEndTime: "", Total_Marks: "" }],
+                });
+                setView("add");
+            },
+            () => alert("Location permission is required.")
+        );
     };
 
     const convertToDateInputFormat = (dateString) => {
         const date = new Date(dateString);
         return date.toISOString().split("T")[0];
+    };
+
+    const calculateEndTime = (start, duration) => {
+        if (!start || !duration) return "";
+
+        const [h, m] = start.split(":").map(Number);
+        const totalMinutes = h * 60 + m + parseInt(duration);
+
+        const endH = Math.floor(totalMinutes / 60) % 24;
+        const endM = totalMinutes % 60;
+
+        return (
+            String(endH).padStart(2, "0") +
+            ":" +
+            String(endM).padStart(2, "0")
+        );
     };
 
     const handleView = (exam) => {
@@ -269,12 +339,24 @@ const ExamMaster = () => {
         const subjectIds = exam.subjectIds ? exam.subjectIds.split(",") : [];
         const examDates = exam.examDates ? exam.examDates.split(",") : [];
         const totalMarks = exam.totalMarks ? exam.totalMarks.split(",") : [];
+        const examStartTimes = exam.examStartTimes ? exam.examStartTimes.split(",") : [];
+        const durations = exam.durations ? exam.durations.split(",") : [];
+        const examEndTimes = exam.examEndTimes ? exam.examEndTimes.split(",") : [];
 
-        const subjectRows = subjectIds.map((subId, index) => ({
-            Subject_Id: String(subId),
-            Exam_Date: examDates[index] || "",
-            Total_Marks: totalMarks[index] || "",
-        }));
+        const subjectRows = subjectIds.map((subId, index) => {
+
+            const start = examStartTimes[index] || "";
+            const duration = durations[index] || "";
+
+            return {
+                Subject_Id: String(subId),
+                Exam_Date: examDates[index] || "",
+                ExamStartTimes: start,
+                Durations: duration,
+                ExamEndTime: calculateEndTime(start, duration),
+                Total_Marks: totalMarks[index] || "",
+            };
+        });
 
         const filteredMappedSubjects = allMappings.filter(
             (m) =>
@@ -294,7 +376,7 @@ const ExamMaster = () => {
             SubjectRows:
                 subjectRows.length > 0
                     ? subjectRows
-                    : [{ Subject_Id: "", Exam_Date: "", Total_Marks: "" }],
+                    : [{ Subject_Id: "", Exam_Date: "", ExamStartTimes: "", Durations: "", ExamEndTime: "", Total_Marks: "" }],
         });
 
         setView("view"); // 👈 IMPORTANT
@@ -309,12 +391,24 @@ const ExamMaster = () => {
         const examDates = exam.examDates ? exam.examDates.split(",") : [];
         const totalMarks = exam.totalMarks ? exam.totalMarks.split(",") : [];
 
+        const examStartTimes = exam.examStartTimes ? exam.examStartTimes.split(",") : [];
+        const durations = exam.durations ? exam.durations.split(",") : [];
+
         // Build subject rows
-        const subjectRows = subjectIds.map((subId, index) => ({
-            Subject_Id: String(subId),
-            Exam_Date: examDates[index] || "",
-            Total_Marks: totalMarks[index] || "",
-        }));
+        const subjectRows = subjectIds.map((subId, index) => {
+
+            const start = examStartTimes[index] || "";
+            const duration = durations[index] || "";
+
+            return {
+                Subject_Id: String(subId),
+                Exam_Date: examDates[index] || "",
+                ExamStartTimes: start,
+                Durations: duration,
+                ExamEndTime: calculateEndTime(start, duration),
+                Total_Marks: totalMarks[index] || "",
+            };
+        });
 
         // Filter dropdown subjects
         const filteredMappedSubjects = allMappings.filter(
@@ -324,6 +418,7 @@ const ExamMaster = () => {
         );
 
         setMappedSubjects(filteredMappedSubjects);
+
 
         setForm({
             Exam_Id: exam.exam_Id,
@@ -335,7 +430,7 @@ const ExamMaster = () => {
             SubjectRows:
                 subjectRows.length > 0
                     ? subjectRows
-                    : [{ Subject_Id: "", Exam_Date: "", Total_Marks: "" }],
+                    : [{ Subject_Id: "", Exam_Date: "", ExamStartTimes: "", Durations: "", ExamEndTime: "", Total_Marks: "" }],
         });
 
         setView("edit");
@@ -365,40 +460,71 @@ const ExamMaster = () => {
             }
         }
 
-        try {
-
-            // 🔥 Convert rows into comma separated values
-            const subjectIds = form.SubjectRows.map(r => r.Subject_Id).join(",");
-            const examDates = form.SubjectRows.map(r => r.Exam_Date).join(",");
-            const totalMarks = form.SubjectRows.map(r => r.Total_Marks).join(",");
-
-            const payload = {
-                mode: view === "edit" ? "Update" : "Add",
-                exam_Id: form.Exam_Id,
-                exam_Name: form.Exam_Name,
-                course_Id: parseInt(form.Course_Id),
-                sem_Id: parseInt(form.Sem_Id),
-                subjectIds: subjectIds,
-                examDates: examDates,
-                totalMarks: totalMarks,
-                created_By: view === "add" ? parseInt(form.Created_By) : null,
-                modified_By: view === "edit" ? parseInt(form.Modified_By) : null
-            };
-
-            await axios.post(API_BASE_URL, payload);
-
-            fetchExams();
-            setView("list");
-
-            alert(view === "edit"
-                ? "Exam updated successfully!"
-                : "Exam saved successfully!"
-            );
-
-        } catch (err) {
-            console.error("Error saving exam", err);
-            alert("Error saving exam.");
+        if (!navigator.geolocation) {
+            alert("Geolocation is not supported by this browser.");
+            return;
         }
+
+        navigator.geolocation.getCurrentPosition(
+            async (position) => {
+                // ✅ User allowed location
+                const latitude = position.coords.latitude.toFixed(14);
+                const longitude = position.coords.longitude.toFixed(14);
+
+                try {
+
+                    // 🔥 Convert rows into comma separated values
+                    const subjectIds = form.SubjectRows.map(r => r.Subject_Id).join(",");
+                    const examDates = form.SubjectRows.map(r => r.Exam_Date).join(",");
+                    const totalMarks = form.SubjectRows.map(r => r.Total_Marks).join(",");
+
+                    const payload = {
+                        mode: view === "edit" ? "Update" : "Add",
+                        exam_Id: form.Exam_Id,
+                        exam_Name: form.Exam_Name,
+                        course_Id: parseInt(form.Course_Id),
+                        sem_Id: parseInt(form.Sem_Id),
+                        subjectIds: subjectIds,
+                        examDates: examDates,
+                        examStartTimes: examStartTimes,
+                        durations: durations,
+                        totalMarks: totalMarks,
+                        created_By: view === "add" ? parseInt(form.Created_By) : null,
+                        modified_By: view === "edit" ? parseInt(form.Modified_By) : null,
+                        latitude: latitude ? parseFloat(latitude) : 0,
+                        longitude: longitude ? parseFloat(longitude) : 0,
+                    };
+
+                    await axios.post(API_BASE_URL, payload);
+
+                    fetchExams();
+                    setView("list");
+
+                    alert(view === "edit"
+                        ? "Exam updated successfully!"
+                        : "Exam saved successfully!"
+                    );
+
+                    console.log("Latitude: " + latitude);
+                    console.log("Longitude: " + longitude);
+                    console.log("Payload:", payload);
+
+                } catch (err) {
+                    console.error("Error saving exam", err);
+
+                    const message =
+                        err.response?.data?.message
+                    //err.response?.data 
+                    //err.message;
+
+                    alert(message);
+                }
+            },
+            (error) => {
+                // ❌ User denied location
+                alert("Location access is required to add or edit an exam.");
+            }
+        );
     };
 
     // const handleSave = async () => {
@@ -501,6 +627,7 @@ const ExamMaster = () => {
                 Modified_By: parseInt(modifiedBy),
             });
             fetchExams();
+            alert("Exam deleted successfully!");
         } catch (err) {
             console.error("Error deleting exam", err);
             alert("Error deleting exam. See console.");
@@ -518,21 +645,57 @@ const ExamMaster = () => {
         doc.text(`Course: ${courseMap[Number(form.Course_Id)]}`, 14, 38);
         doc.text(`Semester: ${semesterMap[Number(form.Sem_Id)]}`, 14, 46);
 
-        // Prepare table data
+        // ✅ Prepare table data with new fields
         const tableData = form.SubjectRows.map((row, index) => [
             index + 1,
             subjectMap[Number(row.Subject_Id)] || "",
             row.Exam_Date,
+            row.ExamStartTimes || "",
+            row.Durations || "",
+            row.ExamEndTime || "",
             row.Total_Marks
         ]);
 
         autoTable(doc, {
             startY: 55,
-            head: [["#", "Subject", "Exam Date", "Total Marks"]],
+            head: [[
+                "Serial Number",
+                "Subject",
+                "Exam Date",
+                "Start Time",
+                "Duration (Minutes)",
+                "End Time",
+                "Total Marks"
+            ]],
             body: tableData,
+            styles: { fontSize: 10 },   // optional for better fit
         });
 
         doc.save(`${form.Exam_Name}_Exam.pdf`);
+    };
+
+    const getLocation = () => {
+        if (!navigator.geolocation) {
+            alert("Geolocation is not supported by this browser.");
+            return;
+        }
+
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                const lat = position.coords.latitude.toFixed(14);
+                const long = position.coords.longitude.toFixed(14);
+
+                setForm(prev => ({
+                    ...prev,
+                    Latitude: lat,
+                    Longitude: long
+                }));
+            },
+            (error) => {
+                alert("Location permission is required.");
+                console.error(error);
+            }
+        );
     };
 
     // ---------------- RENDER ----------------
@@ -778,6 +941,39 @@ const ExamMaster = () => {
                             </select>
 
                             <input type="date" className="form-control" name="Exam_Date" value={row.Exam_Date} onChange={(e) => handleFormChange(e, idx)} disabled={view === "view"} />
+                            {/* <div>
+                                <label>Start Time</label> */}
+                            <input
+                                type="time"
+                                className="form-control"
+                                name="ExamStartTimes"
+                                value={row.ExamStartTimes}
+                                onChange={(e) => handleFormChange(e, idx)}
+                                disabled={view === "view"}
+                            />
+                            {/* </div> */}
+
+                            {/* <div>
+                                <label>Duration (Minutes)</label> */}
+                            <input
+                                type="number"
+                                className="form-control"
+                                name="Durations"
+                                value={row.Durations}
+                                onChange={(e) => handleFormChange(e, idx)}
+                                disabled={view === "view"}
+                            />
+                            {/* </div> */}
+
+                            {/* <div>
+                                <label>End Time (Auto)</label> */}
+                            <input
+                                type="time"
+                                className="form-control"
+                                value={row.ExamEndTime}
+                                disabled={view === "view"}
+                            />
+                            {/* </div> */}
                             <input type="number" className="form-control" placeholder="Marks" name="Total_Marks" value={row.Total_Marks} onChange={(e) => handleFormChange(e, idx)} disabled={view === "view"} />
 
                             <button className="btn btn-danger" onClick={() => removeRow(idx)} disabled={view === "view"}>

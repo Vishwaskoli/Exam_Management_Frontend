@@ -59,6 +59,15 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
                   Semester Master
                 </Link>
               </li>
+              <li>
+                <Link
+                  to="/exam"
+                  onClick={() => setIsOpen(false)}
+                  className="block px-3 py-2 rounded dropdown-item hover:bg-blue-100"
+                >
+                  Exam Master
+                </Link>
+              </li>
             </ul>
           </li>
 
