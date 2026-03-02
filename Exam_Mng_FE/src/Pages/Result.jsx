@@ -68,15 +68,17 @@ const handleCourseChange = async (courseId) => {
     );
     setSemesters(semRes.data);
 
-    const stuRes = await axios.get(
-      `${API_BASE}/Student`
-    );
+    const stuRes = await axios.get(`${API_BASE}/Student`);
+
+    console.log("Students from API:", stuRes.data); // 👈 DEBUG
 
     const filteredStudents = stuRes.data.filter(
-      s => s.course_Id == courseId
+      s => s.courseId == parseInt(courseId)   // ⚠ must match backend property name
     );
 
     setStudents(filteredStudents);
+    console.log("Selected Course:", courseId);
+console.log("Filtered:", filteredStudents);
 
   } catch (err) {
     console.error(err);
