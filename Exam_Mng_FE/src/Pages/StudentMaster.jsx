@@ -21,13 +21,13 @@ export const StudentMaster = () => {
     const [courses, setCourses] = useState([]);
 
     const [image, setImage] = useState(null);
-    const [errorMessage, setErrorMessage] = useState("");
+    // const [errorMessage, setErrorMessage] = useState("");
     const studentsPerPage = 10;
     const [editStudentId, setEditStudentId] = useState(null);
     const [location, setLocation] = useState({ latitude: null, longitude: null });
     const [locationEnabled, setLocationEnabled] = useState(false);
     const [loading, setLoading] = useState(false);
-    const API_BASE_URL = "https://localhost:7248/api/Student";
+    const API_BASE_URL = "https://localhost:7248/api";
 
     const getCurrentLocation = () => {
         if (navigator.geolocation) {
@@ -61,7 +61,7 @@ export const StudentMaster = () => {
 
     const fetchCourses = async () => {
         try {
-            const response = await fetch("https://localhost:7248/api/CourseMaster/ActiveCourses");
+            const response = await fetch(`${API_BASE_URL}/CourseMaster/ActiveCourses`);
             const data = await response.json();
             // console.log(data)
             setCourses(data);
@@ -94,7 +94,7 @@ export const StudentMaster = () => {
             CourseId: student.courseId,
         });
 
-        console.log(formData.DOB)
+        // console.log(formData.DOB)
 
         setPageMode("edit");
     };
@@ -103,10 +103,10 @@ export const StudentMaster = () => {
         try {
             setLoading(true);
             const response = await fetch(
-                `${API_BASE_URL}`
+                `${API_BASE_URL}/Student`
             );
 
-            if (!response.ok) throw new Error("Failed to fetch courses");
+            if (!response.ok) throw new Error("Failed to fetch students");
 
             const data = await response.json();
             // console.log(data)
@@ -160,7 +160,7 @@ export const StudentMaster = () => {
             alert("Please fill all required fields");
             return;
         }
-console.log("DOB:", formData.DOB);
+// console.log("DOB:", formData.DOB);
         const data = new FormData();
 
         // Append form fields
@@ -184,7 +184,7 @@ console.log("DOB:", formData.DOB);
         }
 
         try {
-            const response = await fetch("https://localhost:7248/api/Student", {
+            const response = await fetch(`${API_BASE_URL}/Student`, {
                 method: "POST",
                 body: data
             });
@@ -192,13 +192,16 @@ console.log("DOB:", formData.DOB);
             if (!response.ok) {
                 const errorText = await response.text();
                 console.log("SERVER ERROR:", errorText);  // 👈 ADD THIS
+                if(response.status === 500){
+                    alert("There was some matching record already present.")
+                }
                 throw new Error("Failed to create student");
             }
 
             const result = await response.json();
             // console.log(result);
             alert("Student Created Successfully");
-            setCurrentPage("list");
+            setPageMode("view")
             fetchStudents();
 
         } catch (error) {
@@ -221,7 +224,6 @@ console.log("DOB:", formData.DOB);
 
         // IMPORTANT: Send Student_Id in body
         data.append("Student_Id", editStudentId);
-
         data.append("Stu_FirstName", formData.Stu_FirstName);
         data.append("Stu_MiddleName", formData.Stu_MiddleName);
         data.append("Stu_LastName", formData.Stu_LastName);
@@ -231,14 +233,12 @@ console.log("DOB:", formData.DOB);
         data.append("Phone_No", formData.Phone_No);
         data.append("Student_Code", formData.Student_Code);
         data.append("DOB", formData.DOB);
-
         data.append("Latitude", location.latitude);
         data.append("Longitude", location.longitude);
 
         // If backend requires these (optional — only if needed)
         data.append("Modified_By", 1);
         data.append("Modified_Date", new Date().toISOString());
-
         // Image
         if (image) {
             data.append("image", image);
@@ -246,7 +246,7 @@ console.log("DOB:", formData.DOB);
 
         try {
             console.log("Editing ID:", editStudentId);
-            const response = await fetch(`${API_BASE_URL}/Update`, {
+            const response = await fetch(`${API_BASE_URL}/student/Update`, {
                 method: "POST",   // ✅ POST not PUT
                 body: data
             });
@@ -254,7 +254,10 @@ console.log("DOB:", formData.DOB);
             if (!response.ok) {
                 const errorText = await response.text();
                 // console.log("Server Error:", errorText);
-                alert("Something went wrong while updating the student. Please try again.")
+                if(response.status === 500){
+                    alert("There was some matching record already present.")
+                }
+                // alert("Something went wrong while updating the student. Please try again.")
                 throw new Error("Failed to update student");
             }
 
@@ -285,7 +288,7 @@ console.log("DOB:", formData.DOB);
         if (!confirmDelete) return;
 
         try {
-            const response = await fetch(`${API_BASE_URL}/Delete`, {
+            const response = await fetch(`${API_BASE_URL}/student/Delete`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json"
@@ -298,9 +301,10 @@ console.log("DOB:", formData.DOB);
                 })
             });
 
-            if (!response.ok) {
+            if (!response.ok){
                 const errorText = await response.text();
                 console.log("Server Error:", errorText);
+                alert("Student not deleted check console for more details");
                 throw new Error("Failed to delete student");
             }
 
@@ -336,7 +340,7 @@ console.log("DOB:", formData.DOB);
                         <div className='card shadow-sm'>
                             <div className='card-body'>
                                 {pageMode == "edit" && (<div className="d-flex justify-content-center"
-                                ><img src={`${API_BASE_URL}/image/${editStudentId}`} height="100px" width="100px" className='mb-5 img-fluid' onError={(e) => {
+                                ><img src={`${API_BASE_URL}/student/image/${editStudentId}`} height="100px" width="100px" className='mb-5 img-fluid' onError={(e) => {
                                     e.target.onerror = null;
                                     e.target.src = 'data:image/png;base64,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';
                                 }} /></div>)}
@@ -492,7 +496,7 @@ console.log("DOB:", formData.DOB);
                                                     <td>{indexOfFirstStudent + index + 1}</td>
                                                     <td>
                                                         <img
-                                                            src={`${API_BASE_URL}/image/${student.student_Id}`}
+                                                            src={`${API_BASE_URL}/student/image/${student.student_Id}`}
                                                             alt='student image'
                                                             className='img-fluid'
                                                             height="50px"
