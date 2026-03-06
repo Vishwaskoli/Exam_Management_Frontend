@@ -9,6 +9,7 @@ import Subject_Master from "./Pages/Subject_Master";
 import Subject_Sem_Mapping from "./Pages/Subject_Sem_Mapping";
 import Course_Sem_Mapping from './Pages/Course_Sem_Mapping';
 import Report from './Pages/Report';
+import RegisterUser from './Pages/RegisterUser';
 
 
 function App() {
@@ -26,6 +27,8 @@ function App() {
         <Route path="/dept" element={<Department />} />
         <Route path="/CourseSem" element={<Course_Sem_Mapping />} />
         <Route path="/Report" element={<Report />} />
+        <Route path="/Report" element={<Report />} />
+        <Route path="/Register" element={<RegisterUser />} />
 
       </Routes>
     </BrowserRouter>
