@@ -1,15 +1,15 @@
-import axios from "axios";
+import api from "./axiosConfig";
 
-const API = "https://localhost:7248/api/ResultMaster";
+const API = "/ResultMaster";
 
 export const getResults = () => {
-  return axios.get(`${API}/All`);
+  return api.get(`${API}/All`);
 };
 
 export const saveResult = (data) => {
-  return axios.post(`${API}/Save`, data);
+  return api.post(`${API}/Save`, data);
 };
 
 export const deleteResult = (data) => {
-  return axios.post(`${API}/Delete`, data);
+  return api.post(`${API}/Delete`, data);
 };

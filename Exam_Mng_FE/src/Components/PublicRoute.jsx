@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Navigate } from "react-router-dom";
 import api from "../services/axiosConfig";
 
-const ProtectedRoute = ({ children }) => {
+const PublicRoute = ({ children }) => {
 
   const [authenticated, setAuthenticated] = useState(null);
 
@@ -21,9 +21,9 @@ const ProtectedRoute = ({ children }) => {
 
   if (authenticated === null) return <div>Loading...</div>;
 
-  if (!authenticated) return <Navigate to="/login" />;
+  if (authenticated) return <Navigate to="/ResultMaster" />;
 
   return children;
 };
 
-export default ProtectedRoute;
+export default PublicRoute;

@@ -1,7 +1,18 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import api from "../services/axiosConfig";
+import { useNavigate } from "react-router-dom";
 
 const Sidebar = ({ isOpen, setIsOpen }) => {
+  const navigate = useNavigate();
+
+const handleLogout = async () => {
+
+  await api.post("/User/logout");
+
+  localStorage.removeItem("token");
+navigate("/login");
+};
   return (
     <>
       {/* Overlay */}
@@ -92,6 +103,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
                   Student Master
                 </Link>
               </li>
+             
 
               <li>
                 <Link
@@ -130,7 +142,16 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
           </li>
 
         </ul>
+        <li className="nav-item mt-4">
+  <button
+    className="btn btn-danger ms-3"
+    onClick={handleLogout}
+  >
+    Logout
+  </button>
+</li>
       </div>
+      
     </>
   );
 }; 
